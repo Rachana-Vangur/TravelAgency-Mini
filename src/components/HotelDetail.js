@@ -1,114 +1,242 @@
-import React, { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { hotelService } from "../services/api";
+import "./HotelDetail.css";
 
-const HotelDetails = () => {
-    console.log("HotelDetails component rendered");
-    const { id } = useParams();
-    console.log("Hotel ID from URL:", id);
-    const navigate = useNavigate();
+const HotelDetail = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [hotel, setHotel] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [bookingData, setBookingData] = useState({
+    checkIn: "",
+    checkOut: "",
+    guests: 1,
+    rooms: 1,
+  });
 
-    const hotels = [
-        { id: 1, name: 'Grand Luxury Resort & Spa', images: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS3H0ViK-wk3UIjtGhLGNwyJHOuy4MWNNZlzw&s', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSmquPjkw63Na5S2A1eDSOfvMjJKxO5JJE0Pw&s'], description: 'Grand Luxury offers premium, world-class experiences with opulent accommodations, personalized services, and unmatched comfort for discerning travelers.', price: 350 },
-        { id: 2, name: 'Azure Boutique Hotel', images: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSs5UiDDHgGJGpFL2f9la3vRvW2I7g1ubqN9Q&s', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRxFbebzTgJghx6Zj4Yu30OI4hiKRIVnd3IPA&s'], description: 'Azure Boutique blends elegance and charm, offering stylish, intimate stays with personalized service and a serene ambiance.', price: 280 },
-        { id: 3, name: 'Tropical Paradise Resort', images: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOdCSWn72mR6c5D1PNAFXZXpCwfzwH5fYCFg&s','https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ5DG_UAcu_qyL9SwHxHhvzKSh8o4Bprz4uzA&s'], description: 'Tropical Paradise Resort is a lush escape nestled in nature, offering vibrant surroundings, relaxing vibes, and luxurious island-style comfort.', price: 200 },
-    ];
-
-    const hotel = hotels.find(h => h.id === parseInt(id));
-    console.log("Found hotel:", hotel);
-
-    const [checkInDate, setCheckInDate] = useState('');
-    const [checkOutDate, setCheckOutDate] = useState('');
-    const [totalCost, setTotalCost] = useState(0);
-    const [nights, setNights] = useState(0);
-
-    const calculateCost = () => {
-        if (checkInDate && checkOutDate && hotel) {
-            const startDate = new Date(checkInDate);
-            const endDate = new Date(checkOutDate);
-            const timeDiff = Math.abs(endDate.getTime() - startDate.getTime());
-            const numNights = Math.ceil(timeDiff / (1000 * 3600 * 24));
-            setNights(numNights);
-            setTotalCost(numNights * hotel.price);
-        } else {
-            setTotalCost(0);
-            setNights(0);
-        }
+  useEffect(() => {
+    const fetchHotelData = async () => {
+      try {
+        setLoading(true);
+        console.log("Fetching hotel with ID:", id);
+        const data = await hotelService.getById(id);
+        console.log("Hotel data received:", data);
+        const hotelWithId = {
+          ...data,
+          id: data._id || data.id,
+        };
+        setHotel(hotelWithId);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching hotel:", err);
+        setError("Failed to load hotel details. Please try again later.");
+        setLoading(false);
+      }
     };
 
-    const handleBookClick = () => {
-        if (totalCost > 0) {
-            // Navigate to the payment page, passing relevant information
-            navigate(`/payment/${id}`, { state: { hotelName: hotel.name, totalCost, checkInDate, checkOutDate, nights } });
-        } else {
-            alert("Please select check-in and check-out dates to calculate the cost.");
-        }
-    };
-
-    if (!hotel) {
-        return <div>Hotel not found</div>;
+    if (id) {
+      fetchHotelData();
+    } else {
+      setError("Invalid hotel ID");
+      setLoading(false);
     }
+  }, [id]);
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setBookingData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const calculateTotalPrice = () => {
+    if (!hotel || !bookingData.checkIn || !bookingData.checkOut) return 0;
+
+    const checkIn = new Date(bookingData.checkIn);
+    const checkOut = new Date(bookingData.checkOut);
+    const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+    return hotel.price * nights * bookingData.rooms;
+  };
+
+  const handleBookNow = () => {
+    navigate("/payment", {
+      state: {
+        type: "hotel",
+        itemId: hotel.id,
+        itemName: hotel.name,
+        price: calculateTotalPrice(),
+        bookingDetails: {
+          ...bookingData,
+          hotel: hotel,
+        },
+      },
+    });
+  };
+
+  if (loading) {
     return (
-        <div className="hotel-details-page">
-            <header className="header">
-                <div className="logo">
-                    <Link to="/">
-                        <span className="logo-icon">✈️</span> TripBliss
-                    </Link>
-                </div>
-                <nav className="nav-links">
-                    <Link to="/">Home</Link>
-                    <Link to="/hotels">Hotels</Link>
-                </nav>
-            </header>
-
-            <div className="hotel-details-content">
-                <h1>{hotel.name}</h1>
-
-                <div className="hotel-images">
-                    {hotel.images && hotel.images.map((image, index) => (
-                        <img key={index} src={image} alt={`${hotel.name} View ${index + 1}`} />
-                    ))}
-                </div>
-
-                <div className="hotel-info">
-                    <p>{hotel.description}</p>
-                    <p>Price per night: ${hotel.price}</p>
-
-                    <div className="booking-inputs">
-                        <div>
-                            <label htmlFor="checkin">Check-in Date:</label>
-                            <input
-                                type="date"
-                                id="checkin"
-                                value={checkInDate}
-                                onChange={(e) => setCheckInDate(e.target.value)}
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="checkout">Check-out Date:</label>
-                            <input
-                                type="date"
-                                id="checkout"
-                                value={checkOutDate}
-                                onChange={(e) => setCheckOutDate(e.target.value)}
-                            />
-                        </div>
-                        <button onClick={calculateCost}>Calculate Cost</button>
-                    </div>
-
-                    {totalCost > 0 && (
-                        <div className="cost-summary">
-                            <p>Number of nights: {nights}</p>
-                            <p>Total Cost: ${totalCost}</p>
-                        </div>
-                    )}
-                </div>
-
-                <button className="book-button" onClick={handleBookClick}>Book Now</button>
-            </div>
-        </div>
+      <div className="hotel-detail-loading">
+        <div className="spinner"></div>
+        <p>Loading hotel details...</p>
+      </div>
     );
+  }
+
+  if (error) {
+    return (
+      <div className="hotel-detail-error">
+        <h2>Error</h2>
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()}>Try Again</button>
+      </div>
+    );
+  }
+
+  if (!hotel) {
+    return (
+      <div className="hotel-detail-error">
+        <h2>Hotel Not Found</h2>
+        <p>The hotel you're looking for doesn't exist or has been removed.</p>
+        <button onClick={() => navigate("/hotels")}>Back to Hotels</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="hotel-detail-container">
+      <div className="hotel-detail-header">
+        <h1>Hotel Details</h1>
+        <button className="back-button" onClick={() => navigate("/hotels")}>
+          Back to Hotels
+        </button>
+      </div>
+
+      <div className="hotel-detail-content">
+        <div className="hotel-info-section">
+          <div className="hotel-image">
+            <img src={hotel.image} alt={hotel.name} />
+          </div>
+
+          <div className="hotel-basic-info">
+            <h2>{hotel.name}</h2>
+            <p className="hotel-location">{hotel.location}</p>
+            <div className="hotel-rating">
+              {[...Array(5)].map((_, index) => (
+                <span
+                  key={index}
+                  className={`star ${index < hotel.rating ? "filled" : ""}`}
+                >
+                  ★
+                </span>
+              ))}
+            </div>
+            <p className="hotel-description">{hotel.description}</p>
+          </div>
+
+          <div className="hotel-amenities">
+            <h3>Amenities</h3>
+            <div className="amenities-grid">
+              {hotel.amenities.map((amenity, index) => (
+                <div key={index} className="amenity-item">
+                  <span className="amenity-icon">✓</span>
+                  <span className="amenity-name">{amenity}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="booking-section">
+          <h2>Book This Hotel</h2>
+          <div className="price-info">
+            <p className="price-label">Price per night:</p>
+            <p className="price-amount">₹{hotel.price}</p>
+          </div>
+
+          <form className="booking-form">
+            <div className="form-group">
+              <label htmlFor="checkIn">Check-in Date</label>
+              <input
+                type="date"
+                id="checkIn"
+                name="checkIn"
+                value={bookingData.checkIn}
+                onChange={handleInputChange}
+                min={new Date().toISOString().split("T")[0]}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="checkOut">Check-out Date</label>
+              <input
+                type="date"
+                id="checkOut"
+                name="checkOut"
+                value={bookingData.checkOut}
+                onChange={handleInputChange}
+                min={
+                  bookingData.checkIn || new Date().toISOString().split("T")[0]
+                }
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="guests">Number of Guests</label>
+              <select
+                id="guests"
+                name="guests"
+                value={bookingData.guests}
+                onChange={handleInputChange}
+                required
+              >
+                {[...Array(4)].map((_, i) => (
+                  <option key={i + 1} value={i + 1}>
+                    {i + 1} {i === 0 ? "Guest" : "Guests"}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="rooms">Number of Rooms</label>
+              <select
+                id="rooms"
+                name="rooms"
+                value={bookingData.rooms}
+                onChange={handleInputChange}
+                required
+              >
+                {[...Array(3)].map((_, i) => (
+                  <option key={i + 1} value={i + 1}>
+                    {i + 1} {i === 0 ? "Room" : "Rooms"}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="total-price">
+              <p>Total Price:</p>
+              <p className="total-amount">₹{calculateTotalPrice()}</p>
+            </div>
+
+            <button
+              type="button"
+              className="book-now-button"
+              onClick={handleBookNow}
+              disabled={!bookingData.checkIn || !bookingData.checkOut}
+            >
+              Book Now
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
 };
 
-export default HotelDetails;
+export default HotelDetail;

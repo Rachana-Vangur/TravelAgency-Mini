@@ -1,288 +1,302 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import './Flights.css';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { flightService } from "../services/api";
+import "./Flights.css";
 
 const Flights = () => {
-    const [tripType, setTripType] = useState('roundTrip');
-    const [fromCity, setFromCity] = useState('');
-    const [toCity, setToCity] = useState('');
-    const [departDate, setDepartDate] = useState('');
-    const [passengers, setPassengers] = useState(1);
-    const navigate = useNavigate();
-    const [recentSearches, setRecentSearches] = useState(() => {
-        const storedSearches = localStorage.getItem('recentFlights');
-        return storedSearches ? JSON.parse(storedSearches) : [];
-    });
-    const [availableFlights, setAvailableFlights] = useState([
-        { id: 1, airline: 'SkyHigh Airlines', flightNumber: 'SH 101', from: 'New York', to: 'Dubai', duration: '7h 00m', image: '/images/flights/skyhigh.jpg', price: 450 },
-        { id: 2, airline: 'Blue Sky', flightNumber: 'BS 202', from: 'Amsterdam', to: 'Tokyo', duration: '12h 15m', image: '/images/flights/bluesky.jpg', price: 780 },
-        { id: 3, airline: 'Global Express', flightNumber: 'GE 303', from: 'Paris', to: 'Dubai', duration: '6h 15m', image: '/images/flights/globalexpress.jpg', price: 520 },
-        { id: 4, airline: 'Oceanic Airways', flightNumber: 'OA 404', from: 'London', to: 'Sydney', duration: '22h 30m', image: '/images/flights/oceanic.jpg', price: 920 },
-        { id: 5, airline: 'Polar Jet', flightNumber: 'PJ 505', from: 'Moscow', to: 'Beijing', duration: '8h 45m', image: '/images/flights/polarjet.jpg', price: 610 },
-        { id: 6, airline: 'Sunrise Flights', flightNumber: 'SF 606', from: 'Los Angeles', to: 'Honolulu', duration: '5h 50m', image: '/images/flights/sunrise.jpg', price: 380 },
-        { id: 7, airline: 'Desert Wings', flightNumber: 'DW 707', from: 'Cairo', to: 'Riyadh', duration: '2h 10m', image: '/images/flights/desertwings.jpg', price: 210 },
-        { id: 8, airline: 'Alpine Air', flightNumber: 'AA 808', from: 'Zurich', to: 'Rome', duration: '1h 30m', image: '/images/flights/alpineair.jpg', price: 150 },
-    ]);
-    const [searchResults, setSearchResults] = useState([]);
+  const [flights, setFlights] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [priceFilter, setPriceFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("");
 
-    useEffect(() => {
-        localStorage.setItem('recentFlights', JSON.stringify(recentSearches));
-    }, [recentSearches]);
+  const mockFlights = [
+    {
+      id: "1",
+      airline: "Emirates",
+      flightNumber: "EK123",
+      departure: {
+        city: "Mumbai",
+        airport: "BOM",
+        time: "10:30 AM",
+      },
+      arrival: {
+        city: "Dubai",
+        airport: "DXB",
+        time: "12:30 PM",
+      },
+      duration: "3h 30m",
+      price: 45000,
+      availableSeats: 42,
+      image: "/images/flights/emirates.png",
+    },
+    {
+      id: "2",
+      airline: "Delta",
+      flightNumber: "DL456",
+      departure: {
+        city: "Delhi",
+        airport: "DEL",
+        time: "11:45 AM",
+      },
+      arrival: {
+        city: "New York",
+        airport: "JFK",
+        time: "2:45 PM",
+      },
+      duration: "15h 00m",
+      price: 85000,
+      availableSeats: 28,
+      image: "/images/flights/delta.png",
+    },
+    {
+      id: "3",
+      airline: "Lufthansa",
+      flightNumber: "LH789",
+      departure: {
+        city: "Bangalore",
+        airport: "BLR",
+        time: "1:15 PM",
+      },
+      arrival: {
+        city: "Frankfurt",
+        airport: "FRA",
+        time: "6:45 PM",
+      },
+      duration: "9h 30m",
+      price: 65000,
+      availableSeats: 35,
+      image: "/images/flights/lufthansa.png",
+    },
+    {
+      id: "4",
+      airline: "Singapore Airlines",
+      flightNumber: "SQ234",
+      departure: {
+        city: "Chennai",
+        airport: "MAA",
+        time: "2:30 PM",
+      },
+      arrival: {
+        city: "Singapore",
+        airport: "SIN",
+        time: "7:00 PM",
+      },
+      duration: "4h 30m",
+      price: 35000,
+      availableSeats: 50,
+      image: "/images/flights/singapore.png",
+    },
+    {
+      id: "5",
+      airline: "Qatar Airways",
+      flightNumber: "QR567",
+      departure: {
+        city: "Kolkata",
+        airport: "CCU",
+        time: "3:45 PM",
+      },
+      arrival: {
+        city: "Doha",
+        airport: "DOH",
+        time: "6:15 PM",
+      },
+      duration: "5h 30m",
+      price: 40000,
+      availableSeats: 45,
+      image: "/images/flights/qatar.png",
+    },
+  ];
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        const newSearch = { tripType, from: fromCity, to: toCity, date: departDate, passengers: Number(passengers) };
-        setRecentSearches(prevSearches => {
-            const isDuplicate = prevSearches.some(
-                search => search.from === newSearch.from && search.to === newSearch.to && search.date === newSearch.date && search.passengers === newSearch.passengers && search.tripType === newSearch.tripType
-            );
-            if (isDuplicate) {
-                return prevSearches; // Don't add if it's a duplicate
-            }
-            return [newSearch, ...prevSearches.slice(0, 2)]; // Add to top, keep max 3
-        });
-        console.log("Searching flights:", newSearch);
+  const getPriceRange = (price) => {
+    if (price < 50000) return "budget";
+    if (price < 100000) return "moderate";
+    return "luxury";
+  };
 
-        // Filter available flights based on search criteria (basic matching)
-        const results = availableFlights.filter(flight =>
-            flight.from.toLowerCase().includes(fromCity.toLowerCase()) &&
-            flight.to.toLowerCase().includes(toCity.toLowerCase())
-        );
-        setSearchResults(results);
+  const getAirlineImage = (airline) => {
+    const airlineLower = airline.toLowerCase();
+    if (airlineLower.includes("emirates")) {
+      return "/images/flights/emirates.jpg";
+    } else if (airlineLower.includes("delta")) {
+      return "/images/flights/delta.jpeg";
+    } else if (airlineLower.includes("lufthansa")) {
+      return "/images/flights/lufthansa.jpeg";
+    } else if (airlineLower.includes("singapore")) {
+      return "/images/flights/singapore.jpg";
+    } else if (airlineLower.includes("qatar")) {
+      return "/images/flights/qatar.jpg";
+    }
+    return "/images/airline-placeholder.png";
+  };
+
+  useEffect(() => {
+    const fetchFlights = async () => {
+      try {
+        setLoading(true);
+        const data = await flightService.getAll();
+        setFlights(data);
+        setError(null);
+      } catch (err) {
+        setError("Failed to fetch flights. Please try again later.");
+        console.error("Error fetching flights:", err);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const displayedFlights = searchResults.length > 0 ? searchResults : availableFlights;
+    fetchFlights();
+  }, []);
 
-    const handleBookFlight = (flight) => {
-        navigate('/payment/flight', { // Use a generic identifier for flights
-            state: {
-                itemType: 'flight',
-                flightDetails: flight,
-                passengers: Number(passengers),
-                tripType: tripType,
-                departDate: departDate,
-                totalCost: flight.price * Number(passengers), // Basic cost calculation
-            },
-        });
-    };
+  const filteredFlights = flights.filter((flight) => {
+    const matchesSearch =
+      flight.from.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      flight.to.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      flight.airline.toLowerCase().includes(searchTerm.toLowerCase());
 
+    const matchesPrice =
+      priceFilter === "all" ||
+      (priceFilter === "budget" && flight.price < 50000) ||
+      (priceFilter === "moderate" &&
+        flight.price >= 50000 &&
+        flight.price < 100000) ||
+      (priceFilter === "luxury" && flight.price >= 100000);
+
+    const matchesDate =
+      !dateFilter || flight.departureDate.includes(dateFilter);
+
+    return matchesSearch && matchesPrice && matchesDate;
+  });
+
+  const formatDate = (dateString) => {
+    const options = { year: "numeric", month: "short", day: "numeric" };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  const formatTime = (timeString) => {
+    return timeString.substring(0, 5); // Format as HH:MM
+  };
+
+  if (loading) {
     return (
-        <div className="flights-container">
-            {/* Header/Navigation Bar */}
-            <header className="header">
-                <div className="logo">
-                    <Link to="/">
-                        <span className="logo-icon">✈️</span> TripBliss
-                    </Link>
-                </div>
-                <nav className="nav-links">
-                    <Link to="/">Home</Link>
-                    <Link to="/flights" className="active">Flights</Link>
-                    <Link to="/hotels">Hotels</Link>
-                    <Link to="/destinations">Destinations</Link>
-                    <Link to="/about">About</Link>
-                </nav>
-                
-            </header>
-
-            {/* Hero Section with Flight Search */}
-            <section className="flight-hero-section">
-                <div className="hero-content">
-                    <h1>Find Your Perfect Flight</h1>
-                    <p>Explore global destinations with the best deals on flights</p>
-
-                    {/* Flight Search Form */}
-                    <form className="flight-search-form" onSubmit={handleSearch}>
-                        <div className="trip-type-selector">
-                            <label className={`trip-option ${tripType === 'roundTrip' ? 'selected' : ''}`}>
-                                <input
-                                    type="radio"
-                                    name="tripType"
-                                    value="roundTrip"
-                                    checked={tripType === 'roundTrip'}
-                                    onChange={() => setTripType('roundTrip')}
-                                />
-                                Round Trip
-                            </label>
-                            <label className={`trip-option ${tripType === 'oneWay' ? 'selected' : ''}`}>
-                                <input
-                                    type="radio"
-                                    name="tripType"
-                                    value="oneWay"
-                                    checked={tripType === 'oneWay'}
-                                    onChange={() => setTripType('oneWay')}
-                                />
-                                One Way
-                            </label>
-                            <label className={`trip-option ${tripType === 'multiCity' ? 'selected' : ''}`}>
-                                <input
-                                    type="radio"
-                                    name="tripType"
-                                    value="multiCity"
-                                    checked={tripType === 'multiCity'}
-                                    onChange={() => setTripType('multiCity')}
-                                />
-                                Multi-City
-                            </label>
-                        </div>
-
-                        <div className="search-inputs">
-                            <div className="input-row">
-                                <div className="input-group">
-                                    <div className="input-icon">✈️</div>
-                                    <input
-                                        type="text"
-                                        placeholder="From (City or Airport)"
-                                        value={fromCity}
-                                        onChange={(e) => setFromCity(e.target.value)}
-                                        required
-                                    />
-                                </div>
-
-                                <div className="input-group">
-                                    <div className="input-icon">✈️</div>
-                                    <input
-                                        type="text"
-                                        placeholder="To (City or Airport)"
-                                        value={toCity}
-                                        onChange={(e) => setToCity(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="input-row">
-                                <div className="input-group">
-                                    <div className="input-icon">📅</div>
-                                    <input
-                                        type="date"
-                                        placeholder="dd-mm-yyyy"
-                                        value={departDate}
-                                        onChange={(e) => setDepartDate(e.target.value)}
-                                        required
-                                    />
-                                </div>
-
-                                <div className="input-group">
-                                    <div className="input-icon">👥</div>
-                                    <select
-                                        value={passengers}
-                                        onChange={(e) => setPassengers(Number(e.target.value))}
-                                    >
-                                        <option value="1">1 Passenger</option>
-                                        <option value="2">2 Passengers</option>
-                                        <option value="3">3 Passengers</option>
-                                        <option value="4">4 Passengers</option>
-                                        <option value="5">5+ Passengers</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button type="submit" className="search-button">
-                            <span className="search-icon">🔍</span> Search Flights
-                        </button>
-                    </form>
-                </div>
-            </section>
-
-            {/* Recent Searches Section */}
-            <section className="recent-searches-section">
-                <div className="section-header">
-                    <h2>Recent Searches</h2>
-                </div>
-
-                <div className="recent-searches-grid">
-                    {recentSearches.map((search, index) => (
-                        <div className="search-card" key={index}>
-                            <h3>{search.from} to {search.to}</h3>
-                            <p>Date: {search.date}</p>
-                            <p>Passengers: {search.passengers}</p>
-                            <p>Trip type: {search.tripType}</p>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
-            {/* Available Flights Section */}
-            <section className="available-flights-section">
-                <div className="section-header">
-                    <h2>Available Flights</h2>
-                    <div className="sort-dropdown">
-                        <select>
-                            <option>Recommended</option>
-                            <option>Price: Low to High</option>
-                            <option>Price: High to Low</option>
-                            <option>Duration: Shortest</option>
-                            <option>Duration: Longest</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="flights-grid">
-                    {displayedFlights.map((flight) => (
-                        <div className="flight-card" key={flight.id}>
-                            <div className="flight-image" style={{ backgroundImage: `url(${flight.image})` }}>
-                                <div className="airline-overlay">
-                                    <h3>{flight.airline}</h3>
-                                    <p>{flight.flightNumber}</p>
-                                </div>
-                            </div>
-
-                            <div className="flight-details">
-                                <div className="route-info">
-                                    <div className="city">
-                                        <h4>From</h4>
-                                        <p>{flight.from}</p>
-                                    </div>
-
-                                    <div className="duration">
-                                        <p>{flight.duration}</p>
-                                        <div className="flight-line">
-                                            <div className="airplane-icon">✈️</div>
-                                        </div>
-                                    </div>
-
-                                    <div className="city">
-                                        <h4>To</h4>
-                                        <p>{flight.to}</p>
-                                    </div>
-                                </div>
-
-                                <div className="flight-price">
-                                    <span>${flight.price}</span> per passenger
-                                </div>
-
-                                <button className="book-button" onClick={() => handleBookFlight(flight)}>Book Now</button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
-            {/* Footer Section */}
-            <footer className="footer">
-                <div className="footer-content">
-                    <p>All material herein © 2005-2025 Agoda Company Pte. Ltd. All Rights Reserved.</p>
-                    <p>Agoda is part of Booking Holdings Inc., the world leader in online travel & related services.</p>
-
-                    <div className="partner-logos">
-                        <img src="/images/logos/agoda.png" alt="Agoda" className="partner-logo" />
-                        <img src="/images/logos/priceline.png" alt="Priceline" className="partner-logo" />
-                        <img src="/images/logos/kayak.png" alt="KAYAK" className="partner-logo" />
-                        <img src="/images/logos/booking.png" alt="Booking.com" className="partner-logo" />
-                        <img src="/images/logos/opentable.png" alt="OpenTable" className="partner-logo" />
-                    </div>
-
-                    <div className="app-promotion">
-                        <button className="app-button">
-                            <span className="phone-icon">📱</span> Save more on App!
-                        </button>
-                    </div>
-                </div>
-            </footer>
-        </div>
+      <div className="loading-flights">
+        <div className="spinner"></div>
+        <p>Loading flights...</p>
+      </div>
     );
+  }
+
+  if (error) {
+    return <div className="error-message">{error}</div>;
+  }
+
+  return (
+    <div className="flights-container">
+      <div className="flights-hero-section">
+        <h1>Find Your Perfect Flight</h1>
+        <p>Search and book flights to destinations worldwide</p>
+      </div>
+
+      <div className="search-filters-section">
+        <div className="search-bar">
+          <input
+            type="text"
+            placeholder="Search by city or airline..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="price-filter">
+          <select
+            value={priceFilter}
+            onChange={(e) => setPriceFilter(e.target.value)}
+          >
+            <option value="all">All Prices</option>
+            <option value="budget">Budget</option>
+            <option value="moderate">Moderate</option>
+            <option value="luxury">Luxury</option>
+          </select>
+        </div>
+        <div className="date-filter">
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="flights-grid">
+        {filteredFlights.length > 0 ? (
+          filteredFlights.map((flight) => (
+            <div key={flight._id} className="flight-card">
+              <div className="flight-header">
+                <div className="airline-info">
+                  <img
+                    src={getAirlineImage(flight.airline)}
+                    alt={flight.airline}
+                  />
+                  <span>{flight.airline}</span>
+                </div>
+                <div className="flight-number">{flight.flightNumber}</div>
+              </div>
+
+              <div className="flight-route">
+                <div className="departure">
+                  <div className="time">{formatTime(flight.departureTime)}</div>
+                  <div className="city">{flight.from}</div>
+                </div>
+                <div className="flight-path">
+                  <div className="line"></div>
+                  <div className="duration">{flight.duration}</div>
+                </div>
+                <div className="arrival">
+                  <div className="time">{formatTime(flight.arrivalTime)}</div>
+                  <div className="city">{flight.to}</div>
+                </div>
+              </div>
+
+              <div className="flight-details">
+                <div className="date">{formatDate(flight.departureDate)}</div>
+                <div className="price">
+                  ₹{flight.price.toLocaleString("en-IN")}
+                </div>
+              </div>
+
+              <Link to={`/flights/${flight._id}`} className="book-flight-btn">
+                Book Now
+              </Link>
+            </div>
+          ))
+        ) : (
+          <div className="no-results">
+            <p>No flights found matching your criteria.</p>
+          </div>
+        )}
+      </div>
+
+      <div className="flights-footer">
+        <div className="promo-section">
+          <h2>Special Offers</h2>
+          <p>Book now and get 10% off on your first flight booking!</p>
+          <Link to="/contact" className="contact-btn">
+            Contact Us
+          </Link>
+        </div>
+        <div className="partners-section">
+          <h3>Our Airline Partners</h3>
+          <div className="partner-logos">
+            <img src="/images/flights/emirates.jpg" alt="Emirates" />
+            <img src="/images/flights/delta.jpeg" alt="Delta" />
+            <img src="/images/flights/lufthansa.jpeg" alt="Lufthansa" />
+            <img src="/images/flights/singapore.jpg" alt="Singapore Airlines" />
+            <img src="/images/flights/qatar.jpg" alt="Qatar Airways" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Flights;

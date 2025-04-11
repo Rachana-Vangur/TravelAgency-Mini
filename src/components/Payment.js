@@ -1,339 +1,270 @@
-/*import React, { useState } from 'react';
-import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
-import './Payment.css'; // Make sure you have a Payment.css file
+import React, { useState, useEffect } from "react";
+import { useParams, useLocation, Link, useNavigate } from "react-router-dom";
+import { destinationService, bookingService } from "../services/api";
+import "./Payment.css";
 
 const Payment = () => {
-    console.log("Payment component rendered");
-    const { id } = useParams();
-    console.log("Item ID from URL (Payment):", id); // Will be 'flight' for flights
-    const location = useLocation();
-    console.log("Location state (Payment):", location.state);
-    const navigate = useNavigate();
-    const { itemType, flightDetails, hotelName, totalCost: passedTotalCost, checkInDate, checkOutDate, nights, passengers, tripType, departDate: flightDepartDate } = location.state || {};
-    const [paymentSuccess, setPaymentSuccess] = useState(false);
-    const [cardNumber, setCardNumber] = useState('');
-    const [expiryDate, setExpiryDate] = useState('');
-    const [cvv, setCvv] = useState('');
-    const [paymentDate, setPaymentDate] = useState(flightDepartDate || ''); // Initialize with passed departDate or empty
-    const totalCost = passedTotalCost || 0; // Use passed total cost, default to 0
+  const { id } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [item, setItem] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    startDate: "",
+    endDate: "",
+    numberOfPeople: 1,
+    specialRequests: "",
+    cardNumber: "",
+    expiryDate: "",
+    cvv: "",
+  });
 
-    const handlePayment = () => {
-        if (cardNumber.length >= 15 && expiryDate.length >= 4 && cvv.length >= 3) {
-            setPaymentSuccess(true);
-            setTimeout(() => {
-                setPaymentSuccess(false);
-                navigate('/dashboard'); // Redirect after successful payment
-            }, 3000);
-        } else {
-            alert("Please enter valid card details.");
+  useEffect(() => {
+    const fetchItem = async () => {
+      try {
+        // Check if we have flight details in location state
+        if (location.state && location.state.type === "flight") {
+          setItem(location.state.details);
+          setLoading(false);
+          return;
         }
+
+        // Otherwise fetch destination by ID
+        if (id) {
+          const data = await destinationService.getById(id);
+          setItem(data);
+        }
+      } catch (err) {
+        setError("Failed to load details");
+        console.error("Error fetching details:", err);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    if (!location.state) {
-        return <div>No booking details found. Please go back to the previous page.</div>;
+    fetchItem();
+  }, [id, location.state]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handlePayment = async (e) => {
+    e.preventDefault();
+
+    if (
+      formData.cardNumber.length < 15 ||
+      formData.expiryDate.length < 4 ||
+      formData.cvv.length < 3
+    ) {
+      setError("Please enter valid card details");
+      return;
     }
 
-    return (
-        <div className="payment-page">
-            <header className="header">
-                <div className="logo">
-                    <Link to="/">
-                        <span className="logo-icon">✈️</span> TripBliss
-                    </Link>
-                </div>
-                <nav className="nav-links">
-                    <Link to="/">Home</Link>
-                    <Link to="/flights">Flights</Link>
-                    <Link to="/hotels">Hotels</Link>
-                </nav>
-            </header>
+    try {
+      const bookingData = {
+        itemId: id || item.id,
+        itemType: location.state?.type || "destination",
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        numberOfPeople: parseInt(formData.numberOfPeople),
+        specialRequests: formData.specialRequests,
+      };
 
-            <div className="payment-content">
-                <h2>Payment Details</h2>
+      const response = await bookingService.create(bookingData);
+      setPaymentSuccess(true);
 
-                {itemType === 'hotel' && (
-                    <>
-                        <p>Booking for Hotel: {hotelName}</p>
-                        <p>Check-in Date: {checkInDate}</p>
-                        <p>Check-out Date: {checkOutDate}</p>
-                        <p>Number of Nights: {nights}</p>
-                        <p>Number of Guests: {passengers}</p>
-                        <p>Total Cost: ${totalCost}</p>
-                    </>
-                )}
-
-                {itemType === 'flight' && flightDetails && (
-                    <>
-                        <h3>Flight Details:</h3>
-                        <p>Airline: {flightDetails.airline}</p>
-                        <p>Flight Number: {flightDetails.flightNumber}</p>
-                        <p>From: {flightDetails.from}</p>
-                        <p>To: {flightDetails.to}</p>
-                        <p>Duration: {flightDetails.duration}</p>
-                        <p>Number of Passengers: {passengers}</p>
-                        <p>Trip Type: {tripType}</p>
-                        {flightDepartDate ? (
-                            <p>Departure Date: {flightDepartDate}</p>
-                        ) : (
-                            <div className="payment-input-group">
-                                <label htmlFor="paymentDate">Departure Date:</label>
-                                <input
-                                    type="date"
-                                    id="paymentDate"
-                                    value={paymentDate}
-                                    onChange={(e) => setPaymentDate(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        )}
-                        <p>Total Cost: ${totalCost}</p>
-                    </>
-                )}
-
-                <div className="payment-form">
-                    <h3>Enter Payment Information</h3>
-                    <div className="payment-input-group">
-                        <label htmlFor="cardNumber">Card Number:</label>
-                        <input
-                            type="text"
-                            id="cardNumber"
-                            value={cardNumber}
-                            onChange={(e) => setCardNumber(e.target.value)}
-                            placeholder="XXXX-XXXX-XXXX-XXXX"
-                            required
-                        />
-                    </div>
-                    <div className="payment-input-group">
-                        <label htmlFor="expiryDate">Expiry Date:</label>
-                        <input
-                            type="text"
-                            id="expiryDate"
-                            value={expiryDate}
-                            onChange={(e) => setExpiryDate(e.target.value)}
-                            placeholder="MM/YY"
-                            required
-                        />
-                    </div>
-                    <div className="payment-input-group">
-                        <label htmlFor="cvv">CVV:</label>
-                        <input
-                            type="text"
-                            id="cvv"
-                            value={cvv}
-                            onChange={(e) => setCvv(e.target.value)}
-                            placeholder="XXX"
-                            required
-                        />
-                    </div>
-                    <button className="pay-button" onClick={handlePayment} disabled={paymentSuccess}>
-                        {paymentSuccess ? 'Payment Successful!' : 'Pay Now'}
-                    </button>
-                    {paymentSuccess && <p className="success-message">Redirecting to dashboard...</p>}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export default Payment;
-*/
-
-import React, { useState } from 'react';
-import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
-import './Payment.css'; // Make sure you have a Payment.css file
-
-const Payment = () => {
-    console.log("Payment component rendered");
-    const { id } = useParams();
-    console.log("Item ID from URL (Payment):", id); // Will be 'flight' for flights
-    const location = useLocation();
-    console.log("Location state (Payment):", location.state);
-    const navigate = useNavigate();
-    const {
-        itemType,
-        flightDetails,
-        hotelName,
-        totalCost: passedTotalCost,
-        checkInDate,
-        checkOutDate,
-        nights,
-        guests, // For hotels
-        passengers, // For flights
-        tripType,
-        departDate: flightDepartDate,
-        image: itemImage, // Image URL passed from previous page
-        name: itemName, // Name of the destination/hotel
-        airline,
-        flightNumber,
-        from,
-        to,
-        duration,
-    } = location.state || {};
-    const [paymentSuccess, setPaymentSuccess] = useState(false);
-    const [cardNumber, setCardNumber] = useState('');
-    const [expiryDate, setExpiryDate] = useState('');
-    const [cvv, setCvv] = useState('');
-    const [paymentDate, setPaymentDate] = useState(flightDepartDate || ''); // Initialize with passed departDate or empty
-    const totalCost = passedTotalCost || 0; // Use passed total cost, default to 0
-
-    const handlePayment = () => {
-        if (cardNumber.length >= 15 && expiryDate.length >= 4 && cvv.length >= 3) {
-            setPaymentSuccess(true);
-            const bookingDetails = {
-                id: `BOOKING-${Date.now()}`,
-                itemType: itemType,
-                totalCost: totalCost,
-                date: new Date().toLocaleDateString(),
-                contactEmail: localStorage.getItem('email') || '',
-                image: itemImage,
-                ...(itemType === 'hotel' && {
-                    hotel: itemName,
-                    checkInDate: checkInDate,
-                    checkOutDate: checkOutDate,
-                    nights: nights,
-                    guests: guests,
-                }),
-                ...(itemType === 'flight' && flightDetails && {
-                    flight: `${from} to ${to}`,
-                    airline: airline,
-                    flightNumber: flightNumber,
-                    departDate: paymentDate || flightDepartDate,
-                    passengers: passengers,
-                    tripType: tripType,
-                }),
-                ...(itemType === 'destination' && {
-                    destination: itemName,
-                    checkInDate: checkInDate,
-                    checkOutDate: checkOutDate,
-                    nights: nights,
-                    guests: guests,
-                }),
-            };
-
-            setTimeout(() => {
-                setPaymentSuccess(false);
-                navigate('/dashboard', { state: { newBooking: bookingDetails } });
-            }, 3000);
-        } else {
-            alert("Please enter valid card details.");
-        }
-    };
-
-    if (!location.state) {
-        return <div>No booking details found. Please go back to the previous page.</div>;
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 2000);
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Payment failed. Please try again."
+      );
     }
+  };
 
-    return (
-        <div className="payment-page">
-            <header className="header">
-                <div className="logo">
-                    <Link to="/">
-                        <span className="logo-icon">✈️</span> TripBliss
-                    </Link>
-                </div>
-                <nav className="nav-links">
-                    <Link to="/">Home</Link>
-                    <Link to="/flights">Flights</Link>
-                    <Link to="/hotels">Hotels</Link>
-                </nav>
-            </header>
+  if (loading) {
+    return <div className="loading">Loading details...</div>;
+  }
 
-            <div className="payment-content">
-                <h2>Payment Details</h2>
+  if (error && !item) {
+    return <div className="error-message">{error}</div>;
+  }
 
-                {itemType === 'hotel' && (
-                    <>
-                        <p>Booking for Hotel: {hotelName}</p>
-                        <p>Check-in Date: {checkInDate}</p>
-                        <p>Check-out Date: {checkOutDate}</p>
-                        <p>Number of Nights: {nights}</p>
-                        <p>Number of Guests: {guests}</p>
-                        <p>Total Cost: ${totalCost}</p>
-                    </>
-                )}
+  if (!item) {
+    return <div className="error-message">Item not found</div>;
+  }
 
-                {itemType === 'flight' && flightDetails && (
-                    <>
-                        <h3>Flight Details:</h3>
-                        <p>Airline: {airline}</p>
-                        <p>Flight Number: {flightNumber}</p>
-                        <p>From: {from}</p>
-                        <p>To: {to}</p>
-                        <p>Duration: {duration}</p>
-                        <p>Number of Passengers: {passengers}</p>
-                        <p>Trip Type: {tripType}</p>
-                        {flightDepartDate ? (
-                            <p>Departure Date: {flightDepartDate}</p>
-                        ) : (
-                            <div className="payment-input-group">
-                                <label htmlFor="paymentDate">Departure Date:</label>
-                                <input
-                                    type="date"
-                                    id="paymentDate"
-                                    value={paymentDate}
-                                    onChange={(e) => setPaymentDate(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        )}
-                        <p>Total Cost: ${totalCost}</p>
-                    </>
-                )}
+  const isFlight = location.state?.type === "flight";
+  const totalAmount = isFlight
+    ? location.state.totalCost
+    : item.price * formData.numberOfPeople;
 
-                {itemType === 'destination' && (
-                    <>
-                        <p>Booking for Destination: {itemName}</p>
-                        <p>Check-in Date: {checkInDate}</p>
-                        <p>Check-out Date: {checkOutDate}</p>
-                        <p>Number of Nights: {nights}</p>
-                        <p>Number of Guests: {guests}</p>
-                        <p>Total Cost: ${totalCost}</p>
-                    </>
-                )}
-
-                <div className="payment-form">
-                    <h3>Enter Payment Information</h3>
-                    <div className="payment-input-group">
-                        <label htmlFor="cardNumber">Card Number:</label>
-                        <input
-                            type="text"
-                            id="cardNumber"
-                            value={cardNumber}
-                            onChange={(e) => setCardNumber(e.target.value)}
-                            placeholder="XXXX-XXXX-XXXX-XXXX"
-                            required
-                        />
-                    </div>
-                    <div className="payment-input-group">
-                        <label htmlFor="expiryDate">Expiry Date:</label>
-                        <input
-                            type="text"
-                            id="expiryDate"
-                            value={expiryDate}
-                            onChange={(e) => setExpiryDate(e.target.value)}
-                            placeholder="MM/YY"
-                            required
-                        />
-                    </div>
-                    <div className="payment-input-group">
-                        <label htmlFor="cvv">CVV:</label>
-                        <input
-                            type="text"
-                            id="cvv"
-                            value={cvv}
-                            onChange={(e) => setCvv(e.target.value)}
-                            placeholder="XXX"
-                            required
-                        />
-                    </div>
-                    <button className="pay-button" onClick={handlePayment} disabled={paymentSuccess}>
-                        {paymentSuccess ? 'Payment Successful!' : 'Pay Now'}
-                    </button>
-                    {paymentSuccess && <p className="success-message">Redirecting to dashboard...</p>}
-                </div>
-            </div>
+  return (
+    <div className="payment-page">
+      <header className="header">
+        <div className="logo">
+          <Link to="/">
+            <span className="logo-icon">✈️</span> TripBliss
+          </Link>
         </div>
-    );
+        <nav className="nav-links">
+          <Link to="/">Home</Link>
+          <Link to="/destinations">Destinations</Link>
+        </nav>
+      </header>
+
+      <div className="payment-content">
+        <h2>Complete Your Booking</h2>
+
+        <div className="destination-summary">
+          <img
+            src={item.image || item.imageUrl}
+            alt={item.name}
+            className="destination-image"
+          />
+          <div className="destination-details">
+            <h3>{item.name}</h3>
+            <p>{item.description}</p>
+            {isFlight ? (
+              <>
+                <p>From: {item.from}</p>
+                <p>To: {item.to}</p>
+                <p>Duration: {item.duration}</p>
+                <p>Airline: {item.airline}</p>
+                <p>Flight Number: {item.flightNumber}</p>
+              </>
+            ) : (
+              <>
+                <p>Location: {item.location}</p>
+                <p>Price per person: ₹{item.price}</p>
+                <p>Available spots: {item.availableSpots}</p>
+              </>
+            )}
+          </div>
+        </div>
+
+        <form onSubmit={handlePayment} className="payment-form">
+          <div className="form-section">
+            <h3>Trip Details</h3>
+            <div className="form-group">
+              <label htmlFor="startDate">Start Date:</label>
+              <input
+                type="date"
+                id="startDate"
+                name="startDate"
+                value={formData.startDate}
+                onChange={handleInputChange}
+                required
+                min={new Date().toISOString().split("T")[0]}
+              />
+            </div>
+            {!isFlight && (
+              <div className="form-group">
+                <label htmlFor="endDate">End Date:</label>
+                <input
+                  type="date"
+                  id="endDate"
+                  name="endDate"
+                  value={formData.endDate}
+                  onChange={handleInputChange}
+                  required
+                  min={
+                    formData.startDate || new Date().toISOString().split("T")[0]
+                  }
+                />
+              </div>
+            )}
+            <div className="form-group">
+              <label htmlFor="numberOfPeople">Number of People:</label>
+              <input
+                type="number"
+                id="numberOfPeople"
+                name="numberOfPeople"
+                value={formData.numberOfPeople}
+                onChange={handleInputChange}
+                required
+                min="1"
+                max={isFlight ? 9 : item.availableSpots}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="specialRequests">Special Requests:</label>
+              <textarea
+                id="specialRequests"
+                name="specialRequests"
+                value={formData.specialRequests}
+                onChange={handleInputChange}
+                placeholder="Any special requirements or requests?"
+              />
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3>Payment Information</h3>
+            <div className="form-group">
+              <label htmlFor="cardNumber">Card Number:</label>
+              <input
+                type="text"
+                id="cardNumber"
+                name="cardNumber"
+                value={formData.cardNumber}
+                onChange={handleInputChange}
+                placeholder="XXXX-XXXX-XXXX-XXXX"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="expiryDate">Expiry Date:</label>
+              <input
+                type="text"
+                id="expiryDate"
+                name="expiryDate"
+                value={formData.expiryDate}
+                onChange={handleInputChange}
+                placeholder="MM/YY"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="cvv">CVV:</label>
+              <input
+                type="text"
+                id="cvv"
+                name="cvv"
+                value={formData.cvv}
+                onChange={handleInputChange}
+                placeholder="XXX"
+                required
+              />
+            </div>
+          </div>
+
+          {error && <p className="error-message">{error}</p>}
+
+          <div className="total-section">
+            <h3>Total Amount</h3>
+            <p className="total-amount">₹{totalAmount.toFixed(2)}</p>
+          </div>
+
+          <button
+            type="submit"
+            className="pay-button"
+            disabled={paymentSuccess}
+          >
+            {paymentSuccess ? "Payment Successful!" : "Complete Payment"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default Payment;

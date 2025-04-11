@@ -23,6 +23,8 @@ mongoose
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/destinations", require("./routes/destinations"));
 app.use("/api/bookings", require("./routes/bookings"));
+app.use("/api/flights", require("./routes/flights"));
+app.use("/api/hotels", require("./routes/hotels"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

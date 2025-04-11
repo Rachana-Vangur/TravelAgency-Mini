@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sky -->
+  <rect width="800" height="600" fill="#87CEEB"/>
+  
+  <!-- Sun -->
+  <circle cx="700" cy="100" r="50" fill="#FFD700"/>
+  
+  <!-- Clouds -->
+  <g fill="#FFFFFF">
+    <circle cx="200" cy="100" r="30"/>
+    <circle cx="240" cy="100" r="40"/>
+    <circle cx="280" cy="100" r="30"/>
+    <circle cx="400" cy="150" r="25"/>
+    <circle cx="440" cy="150" r="35"/>
+    <circle cx="480" cy="150" r="25"/>
+  </g>
+  
+  <!-- Ocean -->
+  <rect width="800" height="300" y="300" fill="#1E90FF"/>
+  
+  <!-- Beach -->
+  <path d="M0,300 Q200,280 400,300 T800,300 L800,600 L0,600 Z" fill="#F4A460"/>
+  
+  <!-- Palm Trees -->
+  <g transform="translate(150,300)">
+    <!-- Tree 1 -->
+    <rect x="-5" y="-100" width="10" height="100" fill="#8B4513"/>
+    <path d="M0,-100 Q-30,-130 -20,-160 T0,-190 T20,-160 T30,-130 Z" fill="#228B22"/>
+    <path d="M0,-100 Q30,-130 20,-160 T0,-190 T-20,-160 T-30,-130 Z" fill="#228B22"/>
+  </g>
+  
+  <g transform="translate(650,300)">
+    <!-- Tree 2 -->
+    <rect x="-5" y="-100" width="10" height="100" fill="#8B4513"/>
+    <path d="M0,-100 Q-30,-130 -20,-160 T0,-190 T20,-160 T30,-130 Z" fill="#228B22"/>
+    <path d="M0,-100 Q30,-130 20,-160 T0,-190 T-20,-160 T-30,-130 Z" fill="#228B22"/>
+  </g>
+  
+  <!-- Resort Building -->
+  <g transform="translate(400,250)">
+    <!-- Main Building -->
+    <rect x="-100" y="-150" width="200" height="150" fill="#FFFFFF"/>
+    <!-- Windows -->
+    <g fill="#87CEEB">
+      <rect x="-80" y="-130" width="30" height="30"/>
+      <rect x="-30" y="-130" width="30" height="30"/>
+      <rect x="20" y="-130" width="30" height="30"/>
+      <rect x="70" y="-130" width="30" height="30"/>
+      <rect x="-80" y="-80" width="30" height="30"/>
+      <rect x="-30" y="-80" width="30" height="30"/>
+      <rect x="20" y="-80" width="30" height="30"/>
+      <rect x="70" y="-80" width="30" height="30"/>
+    </g>
+    <!-- Roof -->
+    <path d="M-120,-150 L400,-150 L400,-170 L-120,-170 Z" fill="#FF6347"/>
+  </g>
+  
+  <!-- Beach Umbrellas -->
+  <g transform="translate(250,350)">
+    <rect x="-2" y="-50" width="4" height="50" fill="#8B4513"/>
+    <path d="M-20,-50 Q0,-80 20,-50 Z" fill="#FF6347"/>
+  </g>
+  
+  <g transform="translate(550,350)">
+    <rect x="-2" y="-50" width="4" height="50" fill="#8B4513"/>
+    <path d="M-20,-50 Q0,-80 20,-50 Z" fill="#FF6347"/>
+  </g>
+</svg> 

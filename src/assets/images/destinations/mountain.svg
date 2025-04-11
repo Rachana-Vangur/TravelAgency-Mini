@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sky -->
+  <rect width="800" height="600" fill="#87CEEB"/>
+  
+  <!-- Sun -->
+  <circle cx="700" cy="100" r="50" fill="#FFD700"/>
+  
+  <!-- Clouds -->
+  <g fill="#FFFFFF">
+    <circle cx="200" cy="100" r="30"/>
+    <circle cx="240" cy="100" r="40"/>
+    <circle cx="280" cy="100" r="30"/>
+    <circle cx="400" cy="150" r="25"/>
+    <circle cx="440" cy="150" r="35"/>
+    <circle cx="480" cy="150" r="25"/>
+  </g>
+  
+  <!-- Mountains -->
+  <g>
+    <!-- Background Mountains -->
+    <path d="M0,400 L200,200 L400,400 Z" fill="#A9A9A9"/>
+    <path d="M200,400 L400,150 L600,400 Z" fill="#808080"/>
+    <path d="M400,400 L600,100 L800,400 Z" fill="#696969"/>
+    
+    <!-- Snow Caps -->
+    <path d="M0,400 L200,200 L150,250 L50,400 Z" fill="#FFFFFF"/>
+    <path d="M200,400 L400,150 L350,200 L250,400 Z" fill="#FFFFFF"/>
+    <path d="M400,400 L600,100 L550,150 L450,400 Z" fill="#FFFFFF"/>
+  </g>
+  
+  <!-- Trees -->
+  <g>
+    <!-- Left Side Trees -->
+    <path d="M50,450 L80,400 L110,450 Z" fill="#228B22"/>
+    <path d="M100,450 L130,400 L160,450 Z" fill="#228B22"/>
+    <path d="M150,450 L180,400 L210,450 Z" fill="#228B22"/>
+    
+    <!-- Middle Trees -->
+    <path d="M350,450 L380,400 L410,450 Z" fill="#228B22"/>
+    <path d="M400,450 L430,400 L460,450 Z" fill="#228B22"/>
+    <path d="M450,450 L480,400 L510,450 Z" fill="#228B22"/>
+    
+    <!-- Right Side Trees -->
+    <path d="M650,450 L680,400 L710,450 Z" fill="#228B22"/>
+    <path d="M700,450 L730,400 L760,450 Z" fill="#228B22"/>
+    <path d="M750,450 L780,400 L810,450 Z" fill="#228B22"/>
+  </g>
+  
+  <!-- Ground -->
+  <rect x="0" y="450" width="800" height="150" fill="#556B2F"/>
+  
+  <!-- Birds -->
+  <g fill="#000000">
+    <path d="M200,150 Q220,140 240,150 T280,150"/>
+    <path d="M400,200 Q420,190 440,200 T480,200"/>
+    <path d="M600,250 Q620,240 640,250 T680,250"/>
+  </g>
+  
+  <!-- Cabin -->
+  <g>
+    <!-- Main Structure -->
+    <rect x="300" y="350" width="200" height="150" fill="#8B4513"/>
+    <!-- Roof -->
+    <path d="M280,350 L400,300 L520,350 Z" fill="#A52A2A"/>
+    <!-- Door -->
+    <rect x="375" y="425" width="50" height="75" fill="#4A2500"/>
+    <!-- Windows -->
+    <rect x="325" y="375" width="40" height="40" fill="#87CEEB"/>
+    <rect x="435" y="375" width="40" height="40" fill="#87CEEB"/>
+  </g>
+</svg> 
