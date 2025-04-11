@@ -1,267 +1,274 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useLocation, Link, useNavigate } from "react-router-dom";
-import { destinationService, bookingService } from "../services/api";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./Payment.css";
 
 const Payment = () => {
-  const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const [item, setItem] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [formData, setFormData] = useState({
-    startDate: "",
-    endDate: "",
-    numberOfPeople: 1,
-    specialRequests: "",
+  const [paymentData, setPaymentData] = useState({
     cardNumber: "",
+    cardHolder: "",
     expiryDate: "",
     cvv: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Get booking details from location state
+  const bookingDetails = location.state?.bookingDetails || {};
+  const itemType = location.state?.type || "";
+  const itemId = location.state?.itemId || "";
+  const itemName = location.state?.itemName || "";
+  const price = location.state?.price || 0;
 
   useEffect(() => {
-    const fetchItem = async () => {
-      try {
-        // Check if we have flight details in location state
-        if (location.state && location.state.type === "flight") {
-          setItem(location.state.details);
-          setLoading(false);
-          return;
-        }
-
-        // Otherwise fetch destination by ID
-        if (id) {
-          const data = await destinationService.getById(id);
-          setItem(data);
-        }
-      } catch (err) {
-        setError("Failed to load details");
-        console.error("Error fetching details:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchItem();
-  }, [id, location.state]);
+    // Redirect if no booking details or if price is negative
+    if (!location.state || price < 0) {
+      navigate("/");
+    }
+  }, [location.state, navigate, price]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    let formattedValue = value;
+
+    // Format card number with spaces and ensure only numbers
+    if (name === "cardNumber") {
+      // Remove any non-digit characters
+      const numbersOnly = value.replace(/\D/g, "");
+
+      // Format with spaces after every 4 digits
+      formattedValue = numbersOnly.replace(/(\d{4})/g, "$1 ").trim();
+    }
+
+    // Format expiry date
+    if (name === "expiryDate") {
+      formattedValue = value
+        .replace(/\D/g, "")
+        .replace(/(\d{2})(\d{2})/, "$1/$2")
+        .slice(0, 5);
+    }
+
+    // Ensure CVV only contains numbers
+    if (name === "cvv") {
+      formattedValue = value.replace(/\D/g, "").slice(0, 3);
+    }
+
+    setPaymentData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: formattedValue,
     }));
   };
 
-  const handlePayment = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      formData.cardNumber.length < 15 ||
-      formData.expiryDate.length < 4 ||
-      formData.cvv.length < 3
-    ) {
-      setError("Please enter valid card details");
+    // Validate price is not negative
+    if (price < 0) {
+      setError("Invalid price. Please try again.");
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     try {
-      const bookingData = {
-        itemId: id || item.id,
-        itemType: location.state?.type || "destination",
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        numberOfPeople: parseInt(formData.numberOfPeople),
-        specialRequests: formData.specialRequests,
-      };
+      // Simulate payment processing
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      const response = await bookingService.create(bookingData);
-      setPaymentSuccess(true);
+      // In a real application, you would:
+      // 1. Validate the card details
+      // 2. Send the payment information to a payment gateway
+      // 3. Handle the response from the payment gateway
+      // 4. Update the booking status in your database
 
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 2000);
+      // For now, we'll just simulate a successful payment
+      navigate("/booking-confirmation", {
+        state: {
+          type: itemType,
+          itemId,
+          itemName,
+          price,
+          bookingDetails,
+          paymentDetails: {
+            ...paymentData,
+            cardNumber: "**** **** **** " + paymentData.cardNumber.slice(-4),
+          },
+        },
+      });
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Payment failed. Please try again."
-      );
+      setError("Payment failed. Please try again.");
+      console.error("Payment error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) {
-    return <div className="loading">Loading details...</div>;
+  if (!location.state || price < 0) {
+    return null;
   }
-
-  if (error && !item) {
-    return <div className="error-message">{error}</div>;
-  }
-
-  if (!item) {
-    return <div className="error-message">Item not found</div>;
-  }
-
-  const isFlight = location.state?.type === "flight";
-  const totalAmount = isFlight
-    ? location.state.totalCost
-    : item.price * formData.numberOfPeople;
 
   return (
-    <div className="payment-page">
-      <header className="header">
-        <div className="logo">
-          <Link to="/">
-            <span className="logo-icon">✈️</span> TripBliss
-          </Link>
-        </div>
-        <nav className="nav-links">
-          <Link to="/">Home</Link>
-          <Link to="/destinations">Destinations</Link>
-        </nav>
-      </header>
+    <div className="payment-container">
+      <div className="payment-header">
+        <h1>Complete Your Payment</h1>
+        <p className="payment-subtitle">
+          {itemType === "destination"
+            ? "Destination Booking"
+            : itemType === "flight"
+            ? "Flight Booking"
+            : "Hotel Booking"}
+        </p>
+      </div>
 
       <div className="payment-content">
-        <h2>Complete Your Booking</h2>
-
-        <div className="destination-summary">
-          <img
-            src={item.image || item.imageUrl}
-            alt={item.name}
-            className="destination-image"
-          />
-          <div className="destination-details">
-            <h3>{item.name}</h3>
-            <p>{item.description}</p>
-            {isFlight ? (
-              <>
-                <p>From: {item.from}</p>
-                <p>To: {item.to}</p>
-                <p>Duration: {item.duration}</p>
-                <p>Airline: {item.airline}</p>
-                <p>Flight Number: {item.flightNumber}</p>
-              </>
-            ) : (
-              <>
-                <p>Location: {item.location}</p>
-                <p>Price per person: ₹{item.price}</p>
-                <p>Available spots: {item.availableSpots}</p>
-              </>
-            )}
+        <div className="booking-summary">
+          <h2>Booking Summary</h2>
+          <div className="summary-item">
+            <span>Item:</span>
+            <span>{itemName}</span>
+          </div>
+          {itemType === "destination" && (
+            <>
+              <div className="summary-item">
+                <span>Start Date:</span>
+                <span>{bookingDetails.startDate}</span>
+              </div>
+              <div className="summary-item">
+                <span>End Date:</span>
+                <span>{bookingDetails.endDate}</span>
+              </div>
+              <div className="summary-item">
+                <span>Travelers:</span>
+                <span>{bookingDetails.travelers}</span>
+              </div>
+              <div className="summary-item">
+                <span>Package:</span>
+                <span className="capitalize">{bookingDetails.package}</span>
+              </div>
+            </>
+          )}
+          {itemType === "flight" && (
+            <>
+              <div className="summary-item">
+                <span>Flight:</span>
+                <span>{bookingDetails.flightNumber}</span>
+              </div>
+              <div className="summary-item">
+                <span>Date:</span>
+                <span>{bookingDetails.date}</span>
+              </div>
+              <div className="summary-item">
+                <span>Passengers:</span>
+                <span>{bookingDetails.passengers}</span>
+              </div>
+              <div className="summary-item">
+                <span>Class:</span>
+                <span className="capitalize">{bookingDetails.class}</span>
+              </div>
+            </>
+          )}
+          {itemType === "hotel" && (
+            <>
+              <div className="summary-item">
+                <span>Check-in:</span>
+                <span>{bookingDetails.checkIn}</span>
+              </div>
+              <div className="summary-item">
+                <span>Check-out:</span>
+                <span>{bookingDetails.checkOut}</span>
+              </div>
+              <div className="summary-item">
+                <span>Guests:</span>
+                <span>{bookingDetails.guests}</span>
+              </div>
+              <div className="summary-item">
+                <span>Room Type:</span>
+                <span className="capitalize">{bookingDetails.roomType}</span>
+              </div>
+            </>
+          )}
+          <div className="summary-item total">
+            <span>Total Amount:</span>
+            <span>₹{Math.max(0, price).toLocaleString("en-IN")}</span>
           </div>
         </div>
 
-        <form onSubmit={handlePayment} className="payment-form">
-          <div className="form-section">
-            <h3>Trip Details</h3>
+        <div className="payment-form-container">
+          <h2>Payment Details</h2>
+          <form onSubmit={handleSubmit} className="payment-form">
             <div className="form-group">
-              <label htmlFor="startDate">Start Date:</label>
-              <input
-                type="date"
-                id="startDate"
-                name="startDate"
-                value={formData.startDate}
-                onChange={handleInputChange}
-                required
-                min={new Date().toISOString().split("T")[0]}
-              />
-            </div>
-            {!isFlight && (
-              <div className="form-group">
-                <label htmlFor="endDate">End Date:</label>
-                <input
-                  type="date"
-                  id="endDate"
-                  name="endDate"
-                  value={formData.endDate}
-                  onChange={handleInputChange}
-                  required
-                  min={
-                    formData.startDate || new Date().toISOString().split("T")[0]
-                  }
-                />
-              </div>
-            )}
-            <div className="form-group">
-              <label htmlFor="numberOfPeople">Number of People:</label>
-              <input
-                type="number"
-                id="numberOfPeople"
-                name="numberOfPeople"
-                value={formData.numberOfPeople}
-                onChange={handleInputChange}
-                required
-                min="1"
-                max={isFlight ? 9 : item.availableSpots}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="specialRequests">Special Requests:</label>
-              <textarea
-                id="specialRequests"
-                name="specialRequests"
-                value={formData.specialRequests}
-                onChange={handleInputChange}
-                placeholder="Any special requirements or requests?"
-              />
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h3>Payment Information</h3>
-            <div className="form-group">
-              <label htmlFor="cardNumber">Card Number:</label>
+              <label htmlFor="cardNumber">Card Number</label>
               <input
                 type="text"
                 id="cardNumber"
                 name="cardNumber"
-                value={formData.cardNumber}
+                value={paymentData.cardNumber}
                 onChange={handleInputChange}
-                placeholder="XXXX-XXXX-XXXX-XXXX"
+                placeholder="1234 5678 9012 3456"
+                maxLength="19"
+                pattern="[0-9\s]*"
+                inputMode="numeric"
                 required
               />
             </div>
+
             <div className="form-group">
-              <label htmlFor="expiryDate">Expiry Date:</label>
+              <label htmlFor="cardHolder">Card Holder Name</label>
               <input
                 type="text"
-                id="expiryDate"
-                name="expiryDate"
-                value={formData.expiryDate}
+                id="cardHolder"
+                name="cardHolder"
+                value={paymentData.cardHolder}
                 onChange={handleInputChange}
-                placeholder="MM/YY"
+                placeholder="John Doe"
                 required
               />
             </div>
-            <div className="form-group">
-              <label htmlFor="cvv">CVV:</label>
-              <input
-                type="text"
-                id="cvv"
-                name="cvv"
-                value={formData.cvv}
-                onChange={handleInputChange}
-                placeholder="XXX"
-                required
-              />
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="expiryDate">Expiry Date</label>
+                <input
+                  type="text"
+                  id="expiryDate"
+                  name="expiryDate"
+                  value={paymentData.expiryDate}
+                  onChange={handleInputChange}
+                  placeholder="MM/YY"
+                  maxLength="5"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="cvv">CVV</label>
+                <input
+                  type="text"
+                  id="cvv"
+                  name="cvv"
+                  value={paymentData.cvv}
+                  onChange={handleInputChange}
+                  placeholder="123"
+                  maxLength="3"
+                  required
+                />
+              </div>
             </div>
-          </div>
 
-          {error && <p className="error-message">{error}</p>}
+            {error && <div className="error-message">{error}</div>}
 
-          <div className="total-section">
-            <h3>Total Amount</h3>
-            <p className="total-amount">₹{totalAmount.toFixed(2)}</p>
-          </div>
-
-          <button
-            type="submit"
-            className="pay-button"
-            disabled={paymentSuccess}
-          >
-            {paymentSuccess ? "Payment Successful!" : "Complete Payment"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              className="pay-button"
+              disabled={loading || price < 0}
+            >
+              {loading
+                ? "Processing..."
+                : `Pay ₹${Math.max(0, price).toLocaleString("en-IN")}`}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

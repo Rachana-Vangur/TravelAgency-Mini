@@ -213,6 +213,9 @@ const Dashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("current"); // "current" or "history"
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("all"); // "all", "destination", "flight", "hotel"
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -227,8 +230,10 @@ const Dashboard = () => {
 
     const fetchBookings = async () => {
       try {
+        setLoading(true);
         const userBookings = await bookingService.getMyBookings();
         setBookings(userBookings);
+        setError(null);
       } catch (err) {
         console.error("Error fetching bookings:", err);
         setError("Failed to load bookings");
@@ -256,6 +261,27 @@ const Dashboard = () => {
     }
   };
 
+  const filteredBookings = bookings.filter((booking) => {
+    const matchesSearch =
+      booking.itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.reference?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesType = filterType === "all" || booking.itemType === filterType;
+
+    const isHistory = new Date(booking.endDate || booking.date) < new Date();
+    const matchesTab = activeTab === "history" ? isHistory : !isHistory;
+
+    return matchesSearch && matchesType && matchesTab;
+  });
+
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
   if (loading) {
     return <div className="loading">Loading...</div>;
   }
@@ -269,76 +295,152 @@ const Dashboard = () => {
             alt="User Profile"
             className="profile-image"
           />
-          <div className="details-section">
-            <div className="details-header">Details</div>
-            <button onClick={handleLogout} className="logout-button">
-              Log-out
-            </button>
+          <div className="user-info">
+            <h2>Welcome, {user?.name || "User"}!</h2>
+            <p>Email: {user?.email || ""}</p>
+            <p>Member since: {formatDate(user?.createdAt) || ""}</p>
+          </div>
+          <div className="profile-actions">
             <Link to="/edit-profile" className="edit-profile-button">
               Edit Profile
             </Link>
-            <Link to="/" className="home-button">
-              Home
-            </Link>
-          </div>
-          <div className="user-info">
-            <h2>Hi {user?.name || "User"}!</h2>
-            <p>Email: {user?.email || ""}</p>
-            <p>Role: {user?.role || "user"}</p>
+            <button onClick={handleLogout} className="logout-button">
+              Logout
+            </button>
           </div>
         </div>
       </div>
+
       <div className="main-content">
         <div className="bookings-header">
-          <button className="bookings-tab active">Bookings</button>
-          <button className="history-tab">History</button>
-        </div>
-        <div className="bookings-area">
-          <div className="search-bar">
-            <input type="text" placeholder="Search" />
+          <div className="booking-tabs">
+            <button
+              className={`tab ${activeTab === "current" ? "active" : ""}`}
+              onClick={() => setActiveTab("current")}
+            >
+              Current Bookings
+            </button>
+            <button
+              className={`tab ${activeTab === "history" ? "active" : ""}`}
+              onClick={() => setActiveTab("history")}
+            >
+              Booking History
+            </button>
           </div>
-          {error && <p className="error-message">{error}</p>}
-          <div className="bookings-list">
-            {bookings.length > 0 ? (
-              bookings.map((booking) => (
-                <div className="booking-item" key={booking._id}>
+
+          <div className="booking-filters">
+            <input
+              type="text"
+              placeholder="Search bookings..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All Types</option>
+              <option value="destination">Destinations</option>
+              <option value="flight">Flights</option>
+              <option value="hotel">Hotels</option>
+            </select>
+          </div>
+        </div>
+
+        {error && <div className="error-message">{error}</div>}
+
+        <div className="bookings-list">
+          {filteredBookings.length === 0 ? (
+            <div className="no-bookings">
+              <p>
+                No {activeTab === "current" ? "current" : "past"} bookings
+                found.
+              </p>
+            </div>
+          ) : (
+            filteredBookings.map((booking) => (
+              <div key={booking._id} className="booking-card">
+                <div className="booking-image">
                   <img
-                    src={booking.destination?.imageUrl || ProfilePicture}
-                    alt={booking.destination?.name}
-                    className="booking-image"
+                    src={booking.image || "/images/placeholder.jpg"}
+                    alt={booking.itemName}
                   />
-                  <div className="booking-details">
-                    <p className="destination">
-                      Destination: {booking.destination?.name}
-                    </p>
-                    <p className="date">
-                      From: {new Date(booking.startDate).toLocaleDateString()}
-                    </p>
-                    <p className="date">
-                      To: {new Date(booking.endDate).toLocaleDateString()}
-                    </p>
-                    <p className="guests">
-                      Number of People: {booking.numberOfPeople}
-                    </p>
-                    <p className="total-cost">
-                      Total Cost: ₹{booking.totalPrice}
-                    </p>
-                    <p className="status">Status: {booking.status}</p>
+                </div>
+                <div className="booking-info">
+                  <div className="booking-header">
+                    <h3>{booking.itemName}</h3>
+                    <span className={`booking-type ${booking.itemType}`}>
+                      {booking.itemType}
+                    </span>
                   </div>
-                  {booking.status !== "cancelled" && (
+                  <div className="booking-details">
+                    <p>
+                      <strong>Reference:</strong> {booking.reference}
+                    </p>
+                    {booking.itemType === "destination" && (
+                      <>
+                        <p>
+                          <strong>Dates:</strong>{" "}
+                          {formatDate(booking.startDate)} -{" "}
+                          {formatDate(booking.endDate)}
+                        </p>
+                        <p>
+                          <strong>Travelers:</strong> {booking.travelers}
+                        </p>
+                        <p>
+                          <strong>Package:</strong>{" "}
+                          <span className="capitalize">{booking.package}</span>
+                        </p>
+                      </>
+                    )}
+                    {booking.itemType === "flight" && (
+                      <>
+                        <p>
+                          <strong>Flight:</strong> {booking.flightNumber}
+                        </p>
+                        <p>
+                          <strong>Date:</strong> {formatDate(booking.date)}
+                        </p>
+                        <p>
+                          <strong>Class:</strong>{" "}
+                          <span className="capitalize">{booking.class}</span>
+                        </p>
+                      </>
+                    )}
+                    {booking.itemType === "hotel" && (
+                      <>
+                        <p>
+                          <strong>Check-in:</strong>{" "}
+                          {formatDate(booking.checkIn)}
+                        </p>
+                        <p>
+                          <strong>Check-out:</strong>{" "}
+                          {formatDate(booking.checkOut)}
+                        </p>
+                        <p>
+                          <strong>Guests:</strong> {booking.guests}
+                        </p>
+                      </>
+                    )}
+                    <p className="booking-price">
+                      <strong>Total:</strong> ₹
+                      {booking.totalAmount.toLocaleString("en-IN")}
+                    </p>
+                  </div>
+                  {activeTab === "current" && (
                     <button
-                      className="cancel-button"
                       onClick={() => handleCancelBooking(booking._id)}
+                      className="cancel-button"
                     >
-                      Cancel
+                      Cancel Booking
                     </button>
                   )}
                 </div>
-              ))
-            ) : (
-              <p className="empty-bookings">No current bookings.</p>
-            )}
-          </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

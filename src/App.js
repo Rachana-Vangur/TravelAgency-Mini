@@ -23,6 +23,7 @@ import Hotels from "./components/Hotels";
 import Contact from "./components/Contact";
 import FlightDetail from "./components/FlightDetail";
 import ImageTest from "./components/ImageTest"; // Import ImageTest
+import BookingConfirmation from "./components/BookingConfirmation";
 
 const App = () => {
   return (
@@ -62,6 +63,10 @@ const App = () => {
             {/* Add the route for DestinationDetail */}
             <Route path="/image-test" element={<ImageTest />} />{" "}
             {/* Add the route for ImageTest */}
+            <Route
+              path="/booking-confirmation"
+              element={<BookingConfirmation />}
+            />
           </Routes>
         </main>
       </div>
