@@ -7,9 +7,17 @@ const bookingSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    destination: {
+    itemType: {
+      type: String,
+      enum: ["flight", "hotel", "destination"],
+      required: true,
+    },
+    itemId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Destination",
+      required: true,
+    },
+    itemName: {
+      type: String,
       required: true,
     },
     startDate: {

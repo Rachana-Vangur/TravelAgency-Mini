@@ -1,15 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const Booking = require("../models/Booking");
-const Destination = require("../models/Destination");
 const { protect, restrictTo } = require("../middleware/auth");
 
 // Get all bookings (admin only)
 router.get("/", protect, restrictTo("admin"), async (req, res) => {
   try {
-    const bookings = await Booking.find()
-      .populate("user", "name email")
-      .populate("destination", "name location");
+    const bookings = await Booking.find().populate("user", "name email");
     res.json(bookings);
   } catch (err) {
     res.status(500).json({ message: "Server error" });
@@ -19,10 +16,7 @@ router.get("/", protect, restrictTo("admin"), async (req, res) => {
 // Get user's bookings
 router.get("/my-bookings", protect, async (req, res) => {
   try {
-    const bookings = await Booking.find({ user: req.user.id }).populate(
-      "destination",
-      "name location imageUrl price"
-    );
+    const bookings = await Booking.find({ user: req.user.id });
     res.json(bookings);
   } catch (err) {
     res.status(500).json({ message: "Server error" });
@@ -32,9 +26,10 @@ router.get("/my-bookings", protect, async (req, res) => {
 // Get single booking
 router.get("/:id", protect, async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id)
-      .populate("user", "name email")
-      .populate("destination", "name location imageUrl price");
+    const booking = await Booking.findById(req.params.id).populate(
+      "user",
+      "name email"
+    );
 
     if (!booking) {
       return res.status(404).json({ message: "Booking not found" });
@@ -58,45 +53,35 @@ router.get("/:id", protect, async (req, res) => {
 router.post("/", protect, async (req, res) => {
   try {
     const {
-      destinationId,
-      startDate,
-      endDate,
-      numberOfPeople,
-      specialRequests,
-    } = req.body;
-
-    // Check if destination exists and has available spots
-    const destination = await Destination.findById(destinationId);
-    if (!destination) {
-      return res.status(404).json({ message: "Destination not found" });
-    }
-
-    if (destination.availableSpots < numberOfPeople) {
-      return res.status(400).json({ message: "Not enough available spots" });
-    }
-
-    // Calculate total price
-    const totalPrice = destination.price * numberOfPeople;
-
-    // Create booking
-    const booking = new Booking({
-      user: req.user.id,
-      destination: destinationId,
+      itemType,
+      itemId,
+      itemName,
       startDate,
       endDate,
       numberOfPeople,
       totalPrice,
       specialRequests,
+    } = req.body;
+
+    // Create booking
+    const booking = new Booking({
+      user: req.user.id,
+      itemType,
+      itemId,
+      itemName,
+      startDate,
+      endDate,
+      numberOfPeople,
+      totalPrice,
+      specialRequests,
+      status: "confirmed", // Set initial status as confirmed
+      paymentStatus: "completed", // Set payment status as completed
     });
 
     await booking.save();
-
-    // Update available spots
-    destination.availableSpots -= numberOfPeople;
-    await destination.save();
-
     res.status(201).json(booking);
   } catch (err) {
+    console.error("Booking creation error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -134,14 +119,9 @@ router.delete("/:id", protect, async (req, res) => {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    // Update available spots
-    const destination = await Destination.findById(booking.destination);
-    if (destination) {
-      destination.availableSpots += booking.numberOfPeople;
-      await destination.save();
-    }
+    booking.status = "cancelled";
+    await booking.save();
 
-    await booking.remove();
     res.json({ message: "Booking cancelled" });
   } catch (err) {
     res.status(500).json({ message: "Server error" });

@@ -15,7 +15,10 @@ app.use(express.json());
 
 // Connect to MongoDB
 mongoose
-  .connect(process.env.MONGODB_URI)
+  .connect(process.env.MONGODB_URI, {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  })
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
@@ -25,6 +28,7 @@ app.use("/api/destinations", require("./routes/destinations"));
 app.use("/api/bookings", require("./routes/bookings"));
 app.use("/api/flights", require("./routes/flights"));
 app.use("/api/hotels", require("./routes/hotels"));
+app.use("/api/contact", require("./routes/contact"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
