@@ -1,243 +1,203 @@
-/*// src/components/Dashboard.js
-import React from 'react';
-import './Dashboard.css';
-import ProfilePicture from '../assets/default-profile.png';
-import { Link, useNavigate } from 'react-router-dom';
-
-const Dashboard = () => {
-    const navigate = useNavigate();
-
-    const handleLogout = () => {
-        console.log("Logout button clicked!"); // Debugging line
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('username');
-        localStorage.removeItem('email');
-        localStorage.removeItem('phone');
-        localStorage.removeItem('address');
-        localStorage.removeItem('userBookings');
-        console.log("AuthToken removed:", localStorage.getItem('authToken')); // Debugging line
-        navigate('/');
-        console.log("Navigating to /"); // Debugging line
-    };
-
-    return (
-        <div className="dashboard-container">
-            <div className="sidebar">
-                <div className="profile-section">
-                    <img src={ProfilePicture} alt="User Profile" className="profile-image" />
-                    <div className="details-section">
-                        <div className="details-header">Details</div>
-                        <button onClick={handleLogout} className="logout-button">Log-out</button>
-                        <Link to="/edit-profile" className="edit-profile-button">Edit Profile</Link>
-                        <Link to="/" className="home-button">Home</Link> {/* Added Home Button */
-/*
-                   </div>
-                    <div className="user-info">
-                        <h2>Hi {localStorage.getItem('username') || 'User'} !</h2>
-                        <p>Email: {localStorage.getItem('email') || ''}</p>
-                        <p>Phone: {localStorage.getItem('phone') || ''}</p>
-                        <p>Address: {localStorage.getItem('address') || ''}</p>
-                        <button className="delete-account-button">Delete account</button>
-                    </div>
-                </div>
-            </div>
-            <div className="main-content">
-                <div className="bookings-header">
-                    <button className="bookings-tab active">Bookings</button>
-                    <button className="history-tab">History</button>
-                </div>
-                <div className="bookings-area">
-                    <div className="search-bar">
-                        <input type="text" placeholder="Search" />
-                    </div>
-                    <div className="bookings-list">
-                        {JSON.parse(localStorage.getItem('userBookings'))?.length > 0 ? (
-                            JSON.parse(localStorage.getItem('userBookings')).map(booking => (
-                                <div className="booking-item" key={booking.id}>
-                                    <img src={booking.image} alt={booking.destination} className="booking-image" />
-                                    <div className="booking-details">
-                                        <p className="destination">{booking.destination}</p>
-                                        <p className="reference">{booking.reference}</p>
-                                        <p className="email">{booking.contactEmail}</p>
-                                        <p className="date">{booking.date}</p>
-                                    </div>
-                                    <button className="cancel-button" onClick={() => console.log(`Cancel ${booking.id}`)}>Cancel</button>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="empty-bookings">No current bookings.</p>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export default Dashboard;
-*/
-
-/*// src/components/Dashboard.js
-import React, { useState, useEffect, useRef } from 'react';
-import './Dashboard.css';
-import ProfilePicture from '../assets/default-profile.png';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-
-const Dashboard = () => {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const [userBookings, setUserBookings] = useState([]);
-    const hasLoaded = useRef(false);
-
-    useEffect(() => {
-        if (!hasLoaded.current) {
-            const storedBookings = localStorage.getItem('userBookings');
-            if (storedBookings) {
-                try {
-                    setUserBookings(JSON.parse(storedBookings));
-                } catch (error) {
-                    console.error("Error parsing userBookings from localStorage:", error);
-                    setUserBookings([]);
-                }
-            }
-            hasLoaded.current = true;
-        }
-
-        // Check for new booking from Payment component
-        if (location.state?.newBooking) {
-            const newBooking = location.state.newBooking;
-
-            setUserBookings(prevBookings => {
-                const isDuplicate = prevBookings.some(booking => booking.id === newBooking.id);
-                if (!isDuplicate) {
-                    const updatedBookings = [...prevBookings, newBooking];
-                    localStorage.setItem('userBookings', JSON.stringify(updatedBookings));
-                    return updatedBookings;
-                }
-                return prevBookings;
-            });
-
-            // Clear the state AFTER processing the booking to prevent it from being processed again
-            navigate('.', { replace: true, state: null });
-        }
-    }, [location, navigate]); // Removed hasLoaded from dependency array
-
-    const handleLogout = () => {
-        console.log("Logout button clicked!");
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('username');
-        localStorage.removeItem('email');
-        localStorage.removeItem('phone');
-        localStorage.removeItem('address');
-        localStorage.removeItem('userBookings');
-        console.log("AuthToken removed:", localStorage.getItem('authToken'));
-        navigate('/');
-        console.log("Navigating to /");
-    };
-
-    return (
-        <div className="dashboard-container">
-            <div className="sidebar">
-                <div className="profile-section">
-                    <img src={ProfilePicture} alt="User Profile" className="profile-image" />
-                    <div className="details-section">
-                        <div className="details-header">Details</div>
-                        <button onClick={handleLogout} className="logout-button">Log-out</button>
-                        <Link to="/edit-profile" className="edit-profile-button">Edit Profile</Link>
-                        <Link to="/" className="home-button">Home</Link>
-                    </div>
-                    <div className="user-info">
-                        <h2>Hi {localStorage.getItem('username') || 'User'} !</h2>
-                        <p>Email: {localStorage.getItem('email') || ''}</p>
-                        <p>Phone: {localStorage.getItem('phone') || ''}</p>
-                        <p>Address: {localStorage.getItem('address') || ''}</p>
-                        <button className="delete-account-button">Delete account</button>
-                    </div>
-                </div>
-            </div>
-            <div className="main-content">
-                <div className="bookings-header">
-                    <button className="bookings-tab active">Bookings</button>
-                    <button className="history-tab">History</button>
-                </div>
-                <div className="bookings-area">
-                    <div className="search-bar">
-                        <input type="text" placeholder="Search" />
-                    </div>
-                    <div className="bookings-list">
-                        {userBookings && userBookings.length > 0 ? (
-                            userBookings.map(booking => (
-                                <div className="booking-item" key={booking.id}>
-                                    {booking.image && <img src={booking.image} alt={booking.destination || booking.flight || booking.hotel} className="booking-image" />}
-                                    <div className="booking-details">
-                                        {booking.destination && <p className="destination">Destination: {booking.destination}</p>}
-                                        {booking.flight && <p className="flight">Flight: {booking.flight}</p>}
-                                        {booking.hotel && <p className="hotel">Hotel: {booking.hotel}</p>}
-                                        {booking.reference && <p className="reference">Reference: {booking.reference}</p>}
-                                        {booking.contactEmail && <p className="email">Email: {booking.contactEmail}</p>}
-                                        {booking.date && <p className="date">Date: {booking.date}</p>}
-                                        {booking.checkInDate && <p className="check-in">Check-in: {booking.checkInDate}</p>}
-                                        {booking.checkOutDate && <p className="check-out">Check-out: {booking.checkOutDate}</p>}
-                                        {booking.departDate && <p className="depart-date">Departure: {booking.departDate}</p>}
-                                        {booking.returnDate && <p className="return-date">Return: {booking.returnDate}</p>}
-                                        {booking.guests && <p className="guests">Guests: {booking.guests}</p>}
-                                        {booking.passengers && <p className="passengers">Passengers: {booking.passengers}</p>}
-                                        <p className="total-cost">Total Cost: ₹{booking.totalCost}</p>
-                                    </div>
-                                    <button className="cancel-button" onClick={() => console.log(`Cancel ${booking.id}`)}>Cancel</button>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="empty-bookings">No current bookings.</p>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export default Dashboard;
-*/
-
 // src/components/Dashboard.js
 import React, { useState, useEffect } from "react";
 import "./Dashboard.css";
 import ProfilePicture from "../assets/default-profile.png";
 import { Link, useNavigate } from "react-router-dom";
-import { authService, bookingService } from "../services/api";
+import {
+  authService,
+  bookingService,
+  hotelService,
+  destinationService,
+} from "../services/api";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [bookings, setBookings] = useState([]);
+  const [bookings, setBookings] = useState({
+    current: [],
+    past: [],
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("current"); // "current" or "history"
+  const [activeTab, setActiveTab] = useState("current");
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("all"); // "all", "destination", "flight", "hotel"
+  const [filterType, setFilterType] = useState("all");
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [reviewData, setReviewData] = useState({
+    rating: 5,
+    comment: "",
+  });
+
+  // Authentication check
+  useEffect(() => {
+    if (!localStorage.getItem("authToken")) {
+      navigate("/login", {
+        state: {
+          from: "/dashboard",
+          message: "Please log in to access your dashboard",
+        },
+      });
+    }
+  }, [navigate]);
+
+  // Function to get the appropriate hotel image
+  const getHotelImage = (hotel) => {
+    if (!hotel) return "/images/hotels/grandplaza.jpeg";
+    const name = hotel.name?.toLowerCase() || "";
+    const description = hotel.description?.toLowerCase() || "";
+    if (name.includes("grand plaza") || description.includes("grand plaza")) {
+      return "/images/hotels/grandplaza.jpeg";
+    }
+    if (name.includes("seaside") || description.includes("seaside")) {
+      return "/images/hotels/seaside.jpg";
+    }
+    if (name.includes("mountain") || description.includes("mountain")) {
+      return "/images/hotels/mountainview.jpeg";
+    }
+    if (name.includes("urban") || description.includes("urban")) {
+      return "/images/hotels/urbanbotique.jpg";
+    }
+    if (name.includes("luxury") || description.includes("luxury")) {
+      return "/images/hotels/luxurypalace.jpg";
+    }
+    return "/images/hotels/grandplaza.jpeg";
+  };
+
+  // Function to get the appropriate destination image
+  const getDestinationImage = (destination) => {
+    if (!destination) return "/images/destination.jpg";
+    const name = destination.name?.toLowerCase() || "";
+    const description = destination.description?.toLowerCase() || "";
+    if (name.includes("tokyo") || description.includes("tokyo")) {
+      return "/images/destinations/tokyo.jpeg";
+    }
+    if (name.includes("paris") || description.includes("paris")) {
+      return "/images/destinations/paris.jpeg";
+    }
+    if (name.includes("new york") || description.includes("new york")) {
+      return "/images/destinations/newyork.jpeg";
+    }
+    if (name.includes("rome") || description.includes("rome")) {
+      return "/images/destinations/rome.jpeg";
+    }
+    if (name.includes("sydney") || description.includes("sydney")) {
+      return "/images/destinations/sydney.jpeg";
+    }
+    return "/images/destination.jpg";
+  };
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
+        // Check for authentication token
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          setError("Please log in to access your dashboard");
+          navigate("/login", {
+            state: {
+              from: "/dashboard",
+              message: "Please log in to access your dashboard",
+            },
+          });
+          return;
+        }
+
         const userData = await authService.getCurrentUser();
+        console.log("User data fetched:", userData);
         setUser(userData);
       } catch (err) {
         console.error("Error fetching user data:", err);
-        navigate("/login");
+        setError("Please log in to access your dashboard");
+        navigate("/login", {
+          state: {
+            from: "/dashboard",
+            message: "Please log in to access your dashboard",
+          },
+        });
       }
     };
 
     const fetchBookings = async () => {
       try {
+        // Check for authentication token
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          return; // Don't fetch bookings if not authenticated
+        }
+
         setLoading(true);
-        const userBookings = await bookingService.getMyBookings();
-        setBookings(userBookings);
-        setError(null);
+        const data = await bookingService.getMyBookings();
+        console.log("Raw bookings data:", data);
+
+        // Process and format the bookings
+        const processedBookings = data.map((booking) => {
+          // Determine the correct start and end dates based on booking type
+          let startDate, endDate;
+          if (booking.itemType === "flight") {
+            startDate = booking.departureDate || booking.startDate;
+            endDate = booking.returnDate || booking.endDate;
+          } else if (booking.itemType === "hotel") {
+            startDate = booking.checkIn || booking.startDate;
+            endDate = booking.checkOut || booking.endDate;
+          } else {
+            startDate = booking.startDate;
+            endDate = booking.endDate;
+          }
+
+          // Determine the correct number of people
+          const people =
+            booking.passengers || booking.guests || booking.travelers || 1;
+
+          // Determine the correct total price
+          let totalPrice = booking.totalPrice;
+          if (!totalPrice && booking.price) {
+            totalPrice = booking.price;
+          }
+
+          return {
+            ...booking,
+            startDate,
+            endDate,
+            people,
+            totalPrice,
+            // Add additional fields for display
+            checkIn: startDate,
+            checkOut: endDate,
+            guests: people,
+            rooms: booking.rooms || 1,
+            travelers: people,
+            passengers: people,
+          };
+        });
+
+        // Sort current bookings by start date (most recent first)
+        const currentBookings = processedBookings
+          .filter((booking) => {
+            const endDate = new Date(booking.endDate);
+            return endDate >= new Date();
+          })
+          .sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+
+        // Sort past bookings by end date (most recent first)
+        const pastBookings = processedBookings
+          .filter((booking) => {
+            const endDate = new Date(booking.endDate);
+            return endDate < new Date();
+          })
+          .sort((a, b) => new Date(b.endDate) - new Date(a.endDate));
+
+        console.log("Processed current bookings:", currentBookings);
+        console.log("Processed past bookings:", pastBookings);
+
+        setBookings({
+          current: currentBookings,
+          past: pastBookings,
+        });
+        setLoading(false);
       } catch (err) {
         console.error("Error fetching bookings:", err);
-        setError("Failed to load bookings");
-      } finally {
+        setError("Failed to load bookings. Please try again later.");
         setLoading(false);
       }
     };
@@ -261,29 +221,90 @@ const Dashboard = () => {
     }
   };
 
-  const filteredBookings = bookings.filter((booking) => {
-    const matchesSearch =
-      booking.itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.reference?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesType = filterType === "all" || booking.itemType === filterType;
-
-    const isHistory = new Date(booking.endDate || booking.date) < new Date();
-    const matchesTab = activeTab === "history" ? isHistory : !isHistory;
-
-    return matchesSearch && matchesType && matchesTab;
-  });
-
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+  const handleReviewClick = (booking) => {
+    setSelectedBooking(booking);
+    setShowReviewModal(true);
   };
 
+  const handleReviewSubmit = async () => {
+    try {
+      if (selectedBooking.itemType === "hotel") {
+        await hotelService.addReview(selectedBooking.itemId, reviewData);
+      } else if (selectedBooking.itemType === "destination") {
+        await destinationService.addReview(selectedBooking.itemId, reviewData);
+      }
+      setShowReviewModal(false);
+      setReviewData({ rating: 5, comment: "" });
+      // Refresh bookings to show updated reviews
+      const userBookings = await bookingService.getMyBookings();
+      setBookings(userBookings);
+    } catch (err) {
+      setError("Failed to submit review");
+    }
+  };
+
+  const formatDate = (date) => {
+    if (!date) return "Not set";
+    try {
+      return new Date(date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch (err) {
+      console.error("Error formatting date:", err);
+      return "Invalid Date";
+    }
+  };
+
+  const filteredBookings =
+    activeTab === "current"
+      ? (bookings.current || []).filter((booking) => {
+          const matchesSearch =
+            booking.itemName
+              ?.toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            booking.reference?.toLowerCase().includes(searchTerm.toLowerCase());
+
+          const matchesType =
+            filterType === "all" || booking.itemType === filterType;
+
+          return matchesSearch && matchesType;
+        })
+      : (bookings.past || []).filter((booking) => {
+          const matchesSearch =
+            booking.itemName
+              ?.toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            booking.reference?.toLowerCase().includes(searchTerm.toLowerCase());
+
+          const matchesType =
+            filterType === "all" || booking.itemType === filterType;
+
+          return matchesSearch && matchesType;
+        });
+
   if (loading) {
-    return <div className="loading">Loading...</div>;
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading your bookings...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error-container">
+        <p className="error-message">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="retry-button"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -313,6 +334,7 @@ const Dashboard = () => {
 
       <div className="main-content">
         <div className="bookings-header">
+          <h1>My Bookings</h1>
           <div className="booking-tabs">
             <button
               className={`tab ${activeTab === "current" ? "active" : ""}`}
@@ -349,8 +371,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
-
         <div className="bookings-list">
           {filteredBookings.length === 0 ? (
             <div className="no-bookings">
@@ -358,13 +378,22 @@ const Dashboard = () => {
                 No {activeTab === "current" ? "current" : "past"} bookings
                 found.
               </p>
+              <Link to="/destinations" className="browse-button">
+                Browse Destinations
+              </Link>
             </div>
           ) : (
             filteredBookings.map((booking) => (
               <div key={booking._id} className="booking-card">
                 <div className="booking-image">
                   <img
-                    src={booking.image || "/images/placeholder.jpg"}
+                    src={
+                      booking.itemType === "hotel"
+                        ? getHotelImage(booking.item)
+                        : booking.itemType === "destination"
+                        ? getDestinationImage(booking.item)
+                        : "/images/flight.jpg"
+                    }
                     alt={booking.itemName}
                   />
                 </div>
@@ -395,54 +424,116 @@ const Dashboard = () => {
                         </p>
                       </>
                     )}
-                    {booking.itemType === "flight" && (
-                      <>
-                        <p>
-                          <strong>Flight:</strong> {booking.flightNumber}
-                        </p>
-                        <p>
-                          <strong>Date:</strong> {formatDate(booking.date)}
-                        </p>
-                        <p>
-                          <strong>Class:</strong>{" "}
-                          <span className="capitalize">{booking.class}</span>
-                        </p>
-                      </>
-                    )}
                     {booking.itemType === "hotel" && (
                       <>
                         <p>
                           <strong>Check-in:</strong>{" "}
-                          {formatDate(booking.checkIn)}
+                          {formatDate(booking.startDate)}
                         </p>
                         <p>
                           <strong>Check-out:</strong>{" "}
-                          {formatDate(booking.checkOut)}
+                          {formatDate(booking.endDate)}
                         </p>
                         <p>
-                          <strong>Guests:</strong> {booking.guests}
+                          <strong>Guests:</strong> {booking.numberOfPeople}
+                        </p>
+                        <p>
+                          <strong>Rooms:</strong> {booking.rooms || 1}
                         </p>
                       </>
                     )}
-                    <p className="booking-price">
+                    <p>
+                      <strong>Status:</strong>{" "}
+                      <span
+                        className={`status ${booking.status.toLowerCase()}`}
+                      >
+                        {booking.status}
+                      </span>
+                    </p>
+                    <p>
                       <strong>Total:</strong> ₹
-                      {booking.totalAmount.toLocaleString("en-IN")}
+                      {(
+                        booking.total ||
+                        booking.totalPrice ||
+                        0
+                      ).toLocaleString("en-IN")}
                     </p>
                   </div>
-                  {activeTab === "current" && (
-                    <button
-                      onClick={() => handleCancelBooking(booking._id)}
-                      className="cancel-button"
-                    >
-                      Cancel Booking
-                    </button>
-                  )}
+                  <div className="booking-actions">
+                    {(booking.itemType === "hotel" ||
+                      booking.itemType === "destination") && (
+                      <button
+                        className="review-button"
+                        onClick={() => handleReviewClick(booking)}
+                      >
+                        Write a Review
+                      </button>
+                    )}
+                    {booking.status === "Confirmed" && (
+                      <button
+                        className="cancel-button"
+                        onClick={() => handleCancelBooking(booking._id)}
+                      >
+                        Cancel Booking
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))
           )}
         </div>
       </div>
+
+      {showReviewModal && (
+        <div className="review-modal">
+          <div className="review-modal-content">
+            <h2>Write a Review</h2>
+            <div className="review-form">
+              <div className="rating-input">
+                <label>Rating:</label>
+                <div className="stars">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span
+                      key={star}
+                      className={`star ${
+                        star <= reviewData.rating ? "filled" : ""
+                      }`}
+                      onClick={() =>
+                        setReviewData({ ...reviewData, rating: star })
+                      }
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="comment-input">
+                <label>Comment:</label>
+                <textarea
+                  value={reviewData.comment}
+                  onChange={(e) =>
+                    setReviewData({ ...reviewData, comment: e.target.value })
+                  }
+                  placeholder="Share your experience..."
+                  rows="4"
+                />
+              </div>
+              <div className="review-actions">
+                <button className="submit-review" onClick={handleReviewSubmit}>
+                  Submit Review
+                </button>
+                <button
+                  className="cancel-review"
+                  onClick={() => setShowReviewModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

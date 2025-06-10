@@ -39,19 +39,37 @@ const Contact = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Here you would typically send the form data to your backend
-    setStatus({
-      type: "success",
-      message: "Thank you for your message! We'll get back to you soon.",
-    });
-    setFormData({
-      name: "",
-      email: "",
-      subject: "",
-      message: "",
-    });
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (response.ok) {
+        setStatus({
+          type: "success",
+          message: "Thank you for your message! We'll get back to you soon.",
+        });
+        setFormData({
+          name: "",
+          email: "",
+          subject: "",
+          message: "",
+        });
+      } else {
+        setStatus({
+          type: "error",
+          message: "There was an error sending your message. Please try again.",
+        });
+      }
+    } catch (err) {
+      setStatus({
+        type: "error",
+        message: "There was an error sending your message. Please try again.",
+      });
+    }
   };
 
   const position = [20.5937, 78.9629]; // India's coordinates

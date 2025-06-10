@@ -10,11 +10,10 @@ const BookingConfirmation = () => {
   const itemName = location.state?.itemName || "";
   const price = location.state?.price || 0;
 
-  // Generate a random booking reference number
-  const bookingReference = `BK${Math.random()
-    .toString(36)
-    .substr(2, 9)
-    .toUpperCase()}`;
+  // Use actual booking reference from backend
+  const bookingReference = bookingDetails.bookingId
+    ? `BK-${bookingDetails.bookingId.slice(-6)}`
+    : "Pending";
 
   // Ensure price is not negative
   const safePrice = Math.max(0, price);
@@ -33,7 +32,13 @@ const BookingConfirmation = () => {
           <h2>Booking Details</h2>
           <div className="detail-item">
             <span>Booking Reference:</span>
-            <span className="reference">{bookingReference}</span>
+            <span>{bookingReference}</span>
+          </div>
+          <div className="detail-item">
+            <span>Status:</span>
+            <span className={`status ${bookingDetails.status?.toLowerCase()}`}>
+              {bookingDetails.status || "Pending"}
+            </span>
           </div>
           <div className="detail-item">
             <span>Item Type:</span>

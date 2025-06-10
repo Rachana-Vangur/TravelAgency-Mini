@@ -9,8 +9,7 @@
 .destinations-hero-section {
   text-align: center;
   padding: 60px 20px;
-  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
-    url("../../public/images/background/destinationpage.jpeg");
+  background: url("../../public/images/background/destinationpage.jpeg");
   background-size: cover;
   background-position: center;
   color: white;
@@ -19,14 +18,6 @@
 }
 
 .destinations-hero-section::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3));
-  border-radius: 12px;
 }
 
 .destinations-hero-section h1 {

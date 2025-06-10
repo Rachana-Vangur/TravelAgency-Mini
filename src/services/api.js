@@ -19,23 +19,81 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Add response interceptor to handle errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // If unauthorized, clear token and redirect to login
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth services
 export const authService = {
-  login: async (email, password) => {
-    const response = await api.post("/auth/login", { email, password });
-    return response.data;
+  async login(email, password) {
+    try {
+      const response = await api.post("/auth/login", {
+        email,
+        password,
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   },
-  register: async (name, email, password) => {
-    const response = await api.post("/auth/register", {
-      name,
-      email,
-      password,
-    });
-    return response.data;
+
+  async register(userData) {
+    try {
+      const response = await api.post("/auth/register", userData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   },
+
+  async forgotPassword(email) {
+    try {
+      const response = await api.post("/auth/forgot-password", { email });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async resetPassword(token, password) {
+    try {
+      const response = await api.post("/auth/reset-password", {
+        token,
+        password,
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   getCurrentUser: async () => {
     const response = await api.get("/auth/me");
     return response.data;
+  },
+
+  isAdmin() {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    return user.role === "admin";
+  },
+
+  isAuthenticated() {
+    return !!localStorage.getItem("authToken");
+  },
+
+  logout() {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
   },
 };
 

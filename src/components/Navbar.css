@@ -62,15 +62,15 @@
   text-decoration: none;
 }
 
-.login {
+.nav-button.login {
   background: transparent;
   border: 2px solid #4caf50;
-  color: #4caf50;
+  color: #ffffff;
 }
 
-.login:hover {
+.nav-button.login:hover {
   background: #4caf50;
-  color: white;
+  color: #ffffff;
 }
 
 .register {

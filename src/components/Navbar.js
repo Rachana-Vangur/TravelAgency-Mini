@@ -1,15 +1,31 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Navbar.css";
 import { logo } from "../assets";
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user"));
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState(
+    JSON.parse(localStorage.getItem("user") || "{}")
+  );
+
+  console.log("Navbar user state:", user);
+
+  useEffect(() => {
+    // Update user state when localStorage changes
+    const handleStorageChange = () => {
+      setUser(JSON.parse(localStorage.getItem("user") || "{}"));
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    localStorage.removeItem("token");
+    localStorage.removeItem("authToken");
+    setUser({}); // Update local state immediately
     navigate("/login");
   };
 
@@ -21,7 +37,7 @@ const Navbar = () => {
           <span>TravelEase</span>
         </Link>
 
-        <div className="nav-menu">
+        <div className={`nav-menu ${isMenuOpen ? "active" : ""}`}>
           <Link to="/" className="nav-link">
             Home
           </Link>
@@ -40,11 +56,16 @@ const Navbar = () => {
           <Link to="/contact" className="nav-link">
             Contact
           </Link>
-          {user ? (
+          {user && Object.keys(user).length > 0 ? (
             <>
               <Link to="/dashboard" className="nav-link">
                 Dashboard
               </Link>
+              {user.role === "admin" && (
+                <Link to="/admin" className="nav-link">
+                  Admin Dashboard
+                </Link>
+              )}
               <button onClick={handleLogout} className="nav-button logout">
                 Logout
               </button>

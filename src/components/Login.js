@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { authService } from "../services/api";
 import "./Login.css"; // Make sure you have this CSS
 
@@ -8,6 +8,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,7 +18,14 @@ const Login = () => {
       const response = await authService.login(email, password);
       localStorage.setItem("authToken", response.token);
       localStorage.setItem("user", JSON.stringify(response.user));
-      navigate("/dashboard");
+
+      // Redirect based on user role
+      const from = location.state?.from || "/dashboard";
+      if (response.user.role === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate(from, { replace: true });
+      }
     } catch (err) {
       setError(err.response?.data?.message || "An error occurred during login");
     }
@@ -50,14 +58,17 @@ const Login = () => {
               required
             />
           </div>
+          <div className="forgot-password-link">
+            <Link to="/forgot-password">Forgot Password?</Link>
+          </div>
           {error && <p className="error-message">{error}</p>}
           <button type="submit" className="login-button">
             Login
           </button>
+          <p className="register-link">
+            Don't have an account? <Link to="/signup">Sign Up</Link>
+          </p>
         </form>
-        <p className="signup-link">
-          Don't have an account? <Link to="/signup">Sign up</Link>
-        </p>
       </div>
     </div>
   );

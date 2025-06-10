@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { destinationService } from "../services/api";
+import { bookingService } from "../services/api";
 import "./DestinationDetail.css";
 
 const DestinationDetail = () => {
@@ -8,7 +9,8 @@ const DestinationDetail = () => {
   const navigate = useNavigate();
   const [destination, setDestination] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [bookingData, setBookingData] = useState({
     startDate: "",
     endDate: "",
@@ -17,6 +19,22 @@ const DestinationDetail = () => {
   });
 
   useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setIsAuthenticated(false);
+      setError("Please log in to view destination details and make bookings");
+      navigate("/login", {
+        state: {
+          from: `/destinations/${id}`,
+          message:
+            "Please log in to view destination details and make bookings",
+        },
+      });
+      return;
+    }
+    setIsAuthenticated(true);
+
     const fetchDestination = async () => {
       try {
         setLoading(true);
@@ -34,7 +52,7 @@ const DestinationDetail = () => {
     };
 
     fetchDestination();
-  }, [id]);
+  }, [id, navigate]);
 
   // Function to get the appropriate image based on destination type
   const getDestinationImage = (destination) => {
@@ -232,93 +250,114 @@ const DestinationDetail = () => {
 
         <div className="booking-section">
           <h2>Book This Destination</h2>
-          <div className="destination-info">
-            <div className="price">
-              ₹{destination.price.toLocaleString("en-IN")}
-            </div>
-            <div className="duration">
-              Duration: {destination.duration || 7} days
-            </div>
-          </div>
-
-          <form className="booking-form">
-            <div className="form-group">
-              <label htmlFor="startDate">Start Date</label>
-              <input
-                type="date"
-                id="startDate"
-                name="startDate"
-                value={bookingData.startDate}
-                onChange={handleInputChange}
-                required
-                min={new Date().toISOString().split("T")[0]}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="endDate">End Date</label>
-              <input
-                type="date"
-                id="endDate"
-                name="endDate"
-                value={bookingData.endDate}
-                onChange={handleInputChange}
-                required
-                min={
-                  bookingData.startDate ||
-                  new Date().toISOString().split("T")[0]
+          {!isAuthenticated ? (
+            <div className="login-required-message">
+              <p>Please log in to book this destination</p>
+              <button
+                className="login-button"
+                onClick={() =>
+                  navigate("/login", {
+                    state: {
+                      from: `/destinations/${id}`,
+                      message: "Please log in to book this destination",
+                    },
+                  })
                 }
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="travelers">Number of Travelers</label>
-              <select
-                id="travelers"
-                name="travelers"
-                value={bookingData.travelers}
-                onChange={handleInputChange}
-                required
               >
-                {[...Array(10)].map((_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    {i + 1} {i === 0 ? "Traveler" : "Travelers"}
-                  </option>
-                ))}
-              </select>
+                Log In
+              </button>
             </div>
+          ) : (
+            <>
+              <div className="destination-info">
+                <div className="price">
+                  ₹{destination.price.toLocaleString("en-IN")}
+                </div>
+                <div className="duration">
+                  Duration: {destination.duration || 7} days
+                </div>
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="package">Travel Package</label>
-              <select
-                id="package"
-                name="package"
-                value={bookingData.package}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="standard">Standard</option>
-                <option value="premium">Premium</option>
-                <option value="luxury">Luxury</option>
-              </select>
-            </div>
+              <form className="booking-form">
+                <div className="form-group">
+                  <label htmlFor="startDate">Start Date</label>
+                  <input
+                    type="date"
+                    id="startDate"
+                    name="startDate"
+                    value={bookingData.startDate}
+                    onChange={handleInputChange}
+                    required
+                    min={new Date().toISOString().split("T")[0]}
+                  />
+                </div>
 
-            <div className="total-price">
-              <p>Total Price:</p>
-              <p className="total-amount">
-                ₹{calculateTotalPrice().toLocaleString("en-IN")}
-              </p>
-            </div>
+                <div className="form-group">
+                  <label htmlFor="endDate">End Date</label>
+                  <input
+                    type="date"
+                    id="endDate"
+                    name="endDate"
+                    value={bookingData.endDate}
+                    onChange={handleInputChange}
+                    required
+                    min={
+                      bookingData.startDate ||
+                      new Date().toISOString().split("T")[0]
+                    }
+                  />
+                </div>
 
-            <button
-              type="button"
-              className="book-now-button"
-              onClick={handleBookNow}
-              disabled={!bookingData.startDate || !bookingData.endDate}
-            >
-              Book Now
-            </button>
-          </form>
+                <div className="form-group">
+                  <label htmlFor="travelers">Number of Travelers</label>
+                  <select
+                    id="travelers"
+                    name="travelers"
+                    value={bookingData.travelers}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    {[...Array(10)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {i + 1} {i === 0 ? "Traveler" : "Travelers"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="package">Travel Package</label>
+                  <select
+                    id="package"
+                    name="package"
+                    value={bookingData.package}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="standard">Standard</option>
+                    <option value="premium">Premium</option>
+                    <option value="luxury">Luxury</option>
+                  </select>
+                </div>
+
+                <div className="total-price">
+                  <p>Total Price:</p>
+                  <p className="total-amount">
+                    ₹{calculateTotalPrice().toLocaleString("en-IN")}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  className="book-now-button"
+                  onClick={handleBookNow}
+                  disabled={!bookingData.startDate || !bookingData.endDate}
+                >
+                  Book Now
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </div>
     </div>
