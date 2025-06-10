@@ -1,72 +1,87 @@
-# Getting Started with Create React App
+# Travel Agency Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project consists of a React frontend and a Node.js/Express backend.
 
-## Available Scripts
+## Getting Started
 
-In the project directory, you can run:
+Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
 
-### `npm start`
+### Prerequisites
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+*   Node.js (LTS version recommended)
+*   npm (comes with Node.js)
+*   MongoDB Atlas account (for database hosting)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### Installation
 
-### `npm test`
+1.  **Clone the repository:**
+    ```bash
+    git clone <your-repository-url>
+    cd travel-agency
+    ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2.  **Install frontend dependencies:**
+    ```bash
+    npm install
+    ```
 
-### `npm run build`
+3.  **Install backend dependencies:**
+    ```bash
+    cd backend
+    npm install
+    cd ..
+    ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Environment Variables Setup
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Both the frontend and backend require environment variables to function correctly.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+1.  **Create a `.env` file in the `backend` directory:**
+    Navigate to the `backend` directory and create a file named `.env`.
 
-### `npm run eject`
+    ```bash
+    cd backend
+    touch .env
+    ```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+2.  **Add the following variables to `backend/.env`:**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+    ```
+    PORT=5001
+    NODE_ENV=development
+    MONGODB_URI=<Your_MongoDB_Atlas_Connection_String>
+    JWT_SECRET=<A_Strong_Random_Secret_Key_For_JWT>
+    EMAIL_USER=<Your_Email_Service_Username>
+    EMAIL_PASSWORD=<Your_Email_Service_Password>
+    FRONTEND_URL=http://localhost:3000
+    ```
+    *   Replace `<Your_MongoDB_Atlas_Connection_String>` with your actual connection string from MongoDB Atlas. This usually looks like `mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/<dbname>?retryWrites=true&w=majority`.
+    *   Generate a strong, random string for `<A_Strong_Random_Secret_Key_For_JWT>`.
+    *   `<Your_Email_Service_Username>` and `<Your_Email_Service_Password>` are for sending emails (e.g., for password resets). If you are using Gmail, you might need to generate an App Password.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+3.  **MongoDB Atlas Configuration (Important for database connection):**
+    Ensure your MongoDB Atlas cluster is configured to allow connections from your current IP address.
+    *   Go to your MongoDB Atlas dashboard.
+    *   Navigate to **Network Access** under the **Security** section.
+    *   Click **Add IP Address** and add your current IP, or for development purposes, you can allow access from anywhere (0.0.0.0/0), though this is less secure for production.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Running the Project
 
-## Learn More
+To run the project, you need to start both the backend and the frontend servers.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+1.  **Start the Backend Server:**
+    Open a new terminal, navigate to the `backend` directory, and run:
+    ```bash
+    cd backend
+    npm start
+    ```
+    You should see "Server is running on port 5001" and "Connected to MongoDB" if the connection is successful.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+2.  **Start the Frontend Server:**
+    Open another new terminal, navigate to the project root directory, and run:
+    ```bash
+    npm start
+    ```
+    This will open the application in your browser at `http://localhost:3000` (or another port if 3000 is already in use).
 
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-# This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-
-# TravelAgency-Mini
+Now you should have both the frontend and backend running, and the application should be accessible in your browser.
