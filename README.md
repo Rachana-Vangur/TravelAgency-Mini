@@ -1,4 +1,4 @@
-# Travel Agency Application
+# TravelEase is a travel agency application
 
 This project consists of a React frontend and a Node.js/Express backend.
 
